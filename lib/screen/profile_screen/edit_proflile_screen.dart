@@ -3,9 +3,11 @@
 // ignore_for_file: prefer_const_literals_to_create_immutables
 import 'dart:convert';
 import 'dart:io';
+import 'package:barg_rider_app/ipcon.dart';
+import 'package:barg_rider_app/screen/profile_screen/change_email_phone/check_pass_email_screen.dart';
+import 'package:barg_rider_app/screen/profile_screen/change_email_phone/check_pass_phone_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:barg_rider_app/ipcon.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -75,15 +77,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   update_user() async {
     final response = await http.patch(
-      Uri.parse('$ipcon/edit_img_user/${widget.user_id}'),
+      Uri.parse('$ipcon/edit_user/${widget.user_id}'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
       body: jsonEncode(<String, String>{
         "first_name": firstname!.text,
         "last_name": lastname!.text,
-        "email": email!.text,
-        "phone": phone!.text,
       }),
     );
     print(response.body);
@@ -101,7 +101,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   update_img() async {
-    final uri = Uri.parse("$ipcon/upload");
+    final uri = Uri.parse("$ipcon/edit_img_user");
     var request = http.MultipartRequest('POST', uri);
     var img = await http.MultipartFile.fromPath("img", image!.path);
     request.files.add(img);
@@ -112,177 +112,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } else {
       print("Not upload images");
     }
-  }
-
-  BuildCirCle(ImageProvider<Object>? backgroundImage) {
-    return Stack(
-      children: [
-        CircleAvatar(
-          radius: 83,
-          backgroundColor: Colors.white,
-          child: CircleAvatar(radius: 80, backgroundImage: backgroundImage),
-        ),
-        Positioned(
-          bottom: 0,
-          right: 0,
-          child: CircleAvatar(
-              radius: 23,
-              backgroundColor: Colors.white,
-              child: IconButton(
-                onPressed: () {
-                  showModalBottomSheet(
-                      barrierColor: Colors.black26,
-                      context: this.context,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(30),
-                        ),
-                      ),
-                      builder: (context) {
-                        return showmodal1();
-                      });
-                },
-                icon: Icon(
-                  Icons.photo,
-                  color: Colors.black,
-                ),
-              )),
-        ),
-      ],
-    );
-  }
-
-  showmodal1() {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.3,
-      decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20), topRight: Radius.circular(20))),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            height: MediaQuery.of(context).size.height * 0.1,
-            width: MediaQuery.of(context).size.width * 0.8,
-            decoration: BoxDecoration(
-              color: Colors.blue.shade400,
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                BoxShadow(
-                    blurRadius: 2, color: Colors.black26, offset: Offset(2, 5))
-              ],
-            ),
-            child: Center(
-                child: GestureDetector(
-                    onTap: () {
-                      pickCamera();
-                    },
-                    child: Text(
-                      "ถ่ายรูปภาพ",
-                      style: TextStyle(color: Colors.white, fontSize: 20),
-                    ))),
-          ),
-          SizedBox(
-            height: MediaQuery.of(context).size.height * 0.025,
-          ),
-          Container(
-            height: MediaQuery.of(context).size.height * 0.1,
-            width: MediaQuery.of(context).size.width * 0.8,
-            decoration: BoxDecoration(
-              color: Colors.blue.shade400,
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                BoxShadow(
-                    blurRadius: 2, color: Colors.black26, offset: Offset(2, 5))
-              ],
-            ),
-            child: Center(
-                child: GestureDetector(
-                    onTap: () {
-                      pickImage();
-                    },
-                    child: Text(
-                      "เลือกรูปภาพ",
-                      style: TextStyle(color: Colors.white, fontSize: 20),
-                    ))),
-          )
-        ],
-      ),
-    );
-  }
-
-  BulidData(String text, TextEditingController? controller) {
-    return Column(
-      children: [
-        Container(
-          margin: EdgeInsets.symmetric(horizontal: 35),
-          width: double.infinity,
-          child: Text(
-            text,
-            style: TextStyle(fontSize: 16),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 25),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 4,
-                  offset: Offset(2, 4),
-                ),
-              ],
-            ),
-            child: TextFormField(
-              controller: controller,
-              decoration: InputDecoration(
-                contentPadding: EdgeInsets.symmetric(horizontal: 20),
-                filled: true,
-                fillColor: Colors.white,
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide(
-                    width: 3,
-                    color: Colors.white,
-                  ),
-                ),
-                disabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide(
-                    color: Colors.white,
-                    width: 3,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide(
-                    color: Colors.white,
-                    width: 3,
-                  ),
-                ),
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide(
-                    color: Colors.red,
-                    width: 3,
-                  ),
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide(
-                    width: 3,
-                    color: Colors.red,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
   }
 
   @override
@@ -331,11 +160,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             icon: Icon(
                               Icons.arrow_back_ios_new_outlined,
                               size: 35,
+                              color: Colors.white,
                             ),
                           ),
                           Text(
-                            "EditProfile",
-                            style: TextStyle(fontSize: 20),
+                            "Profile",
+                            style: TextStyle(
+                                fontSize: 20,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -349,41 +182,50 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             ? BuildCirCle(
                                 AssetImage("assets/images/profile.png"))
                             : BuildCirCle(
-                                NetworkImage("$path_img/${widget.img}")),
+                                NetworkImage("$path_img/users/${widget.img}")),
                     SizedBox(
                       height: MediaQuery.of(context).size.height * 0.05,
                     ),
-                    BulidData("FirstName", firstname),
-                    BulidData("Lastname", lastname),
-                    BulidData("Email", email),
-                    BulidData("Phone", phone),
                     Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      child: SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.3,
-                        height: MediaQuery.of(context).size.height * 0.05,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            onPrimary: Colors.black,
-                            primary: Colors.white,
-                            shape: const RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(30)),
+                      padding: const EdgeInsets.symmetric(horizontal: 30),
+                      child: Column(
+                        children: [
+                          BulidBox1("FirstName", firstname),
+                          BulidBox1("Lastname", lastname),
+                          BuildBox2("Email", "${widget.email}",
+                              CheckPassEmailScreen()),
+                          BuildBox2("Phone", "${widget.phone}",
+                              CheckPassPhoneScreen()),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 20),
+                            child: SizedBox(
+                              width: MediaQuery.of(context).size.width * 0.3,
+                              height: MediaQuery.of(context).size.height * 0.05,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  onPrimary: Colors.black,
+                                  primary: Colors.white,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(30)),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    statusLoading = true;
+                                  });
+                                  if (image == null) {
+                                    update_user();
+                                  } else {
+                                    update_user();
+                                    update_img();
+                                  }
+                                },
+                                child: Text('Save'),
+                              ),
                             ),
                           ),
-                          onPressed: () {
-                            setState(() {
-                              statusLoading = true;
-                            });
-                            if (image == null) {
-                              update_user();
-                            } else {
-                              update_user();
-                              update_img();
-                            }
-                          },
-                          child: Text('Save'),
-                        ),
+                        ],
                       ),
                     )
                   ],
@@ -413,6 +255,247 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget BuildShow(String? text) {
+    return SimpleDialog(
+      title: Center(
+          child: Text("$text",
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(30)),
+      ),
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 80),
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              onPrimary: Colors.white,
+              primary: Colors.blue,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(30)),
+              ),
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text('Ok'),
+          ),
+        )
+      ],
+    );
+  }
+
+  BuildCirCle(ImageProvider<Object>? backgroundImage) {
+    return Stack(
+      children: [
+        CircleAvatar(
+          radius: 85,
+          backgroundColor: Colors.white,
+          child: CircleAvatar(radius: 80, backgroundImage: backgroundImage),
+        ),
+        Positioned(
+          bottom: 0,
+          right: 0,
+          child: CircleAvatar(
+              radius: 23,
+              backgroundColor: Colors.white,
+              child: IconButton(
+                onPressed: () {
+                  showModalBottomSheet(
+                      barrierColor: Colors.black26,
+                      context: this.context,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(30),
+                        ),
+                      ),
+                      builder: (context) {
+                        return showmodal1();
+                      });
+                },
+                icon: Icon(
+                  Icons.photo,
+                  color: Colors.black,
+                ),
+              )),
+        ),
+      ],
+    );
+  }
+
+  showmodal1() {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.22,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 5),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              margin: EdgeInsets.symmetric(vertical: 20),
+              width: MediaQuery.of(context).size.width * 0.15,
+              height: MediaQuery.of(context).size.height * 0.008,
+              decoration: BoxDecoration(
+                  color: Colors.grey.shade400,
+                  borderRadius: BorderRadius.circular(30)),
+            ),
+            ListTile(
+              leading: CircleAvatar(
+                  backgroundColor: Colors.grey.shade400,
+                  child: Icon(
+                    Icons.camera_alt,
+                    color: Colors.black,
+                  )),
+              title: Text(
+                "Take photo",
+                style: TextStyle(
+                  fontSize: 18,
+                ),
+              ),
+              onTap: () {
+                pickCamera();
+              },
+            ),
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.grey.shade400,
+                child: Icon(
+                  Icons.photo,
+                  color: Colors.black,
+                ),
+              ),
+              title: Text("Choose from library",
+                  style: TextStyle(
+                    fontSize: 18,
+                  )),
+              onTap: () {
+                pickImage();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget BulidBox1(String text, TextEditingController? controller) {
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          child: Text(
+            text,
+            style: TextStyle(
+                fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 4,
+                  offset: Offset(2, 4),
+                ),
+              ],
+            ),
+            child: TextFormField(
+              controller: controller,
+              decoration: InputDecoration(
+                contentPadding: EdgeInsets.symmetric(horizontal: 20),
+                filled: true,
+                fillColor: Colors.white,
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: BorderSide(
+                    width: 3,
+                    color: Colors.white,
+                  ),
+                ),
+                disabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: BorderSide(
+                    color: Colors.white,
+                    width: 3,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: BorderSide(
+                    color: Colors.white,
+                    width: 3,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget BuildBox2(String? title, String? message, Widget? page) {
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          child: Text(
+            "$title",
+            style: TextStyle(
+                fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+        ),
+        Container(
+          margin: EdgeInsets.symmetric(vertical: 10),
+          height: MediaQuery.of(context).size.height * 0.054,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 4,
+                offset: Offset(2, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.045,
+              ),
+              Container(
+                width: MediaQuery.of(context).size.width * 0.64,
+                child: Text(
+                  "$message",
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+              Container(
+                width: MediaQuery.of(context).size.width * 0.16,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                        onPressed: () {
+                          Navigator.push(context, MaterialPageRoute(
+                              builder: (BuildContext context) {
+                            return page!;
+                          }));
+                        },
+                        icon: Icon(Icons.edit)),
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

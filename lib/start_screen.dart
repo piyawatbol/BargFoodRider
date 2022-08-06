@@ -6,6 +6,7 @@ import 'package:barg_rider_app/ipcon.dart';
 import 'package:barg_rider_app/screen/home_screen/home_screen.dart';
 import 'package:barg_rider_app/screen/login_system/login_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -65,10 +66,23 @@ class _StartScreenState extends State<StartScreen> {
             ],
           ),
         ),
-        child: Center(
-            child: CircularProgressIndicator(
-          color: Colors.blue,
-        )),
+        child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Center(
+            child: Image.asset(
+              "assets/images/logo.png",
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 50),
+            child: SpinKitThreeBounce(
+              color: Colors.blue,
+              size: 30,
+            ),
+          )
+        ],
+      ),
       ),
     );
   }

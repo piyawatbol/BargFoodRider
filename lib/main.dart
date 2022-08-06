@@ -23,9 +23,7 @@ class MyApp extends StatelessWidget {
 }
 
 class SplashScreen extends StatelessWidget {
-  
   const SplashScreen({Key? key}) : super(key: key);
-  
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +32,7 @@ class SplashScreen extends StatelessWidget {
         child: SizedBox(
             width: 1000,
             height: 1000,
-            child: Image.asset("assets/images/profile.jpeg")),
+            child: Image.asset("assets/images/logo.png")),
       ),
       nextScreen: StartScreen(),
       splashIconSize: 200,

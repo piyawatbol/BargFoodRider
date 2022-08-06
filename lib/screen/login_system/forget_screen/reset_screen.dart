@@ -1,8 +1,8 @@
 // ignore_for_file: prefer_const_constructors_in_immutables, prefer_const_constructors, prefer_const_literals_to_create_immutables, non_constant_identifier_names, deprecated_member_use, must_be_immutable
 import 'dart:convert';
+import 'package:barg_rider_app/ipcon.dart';
 import 'package:barg_rider_app/screen/login_system/login_screen.dart';
 import 'package:http/http.dart' as http;
-import 'package:barg_rider_app/ipcon.dart';
 import 'package:flutter/material.dart';
 
 class ResetScreen extends StatefulWidget {
@@ -38,10 +38,7 @@ class _ResetScreenState extends State<ResetScreen> {
               ),
             ),
             onPressed: () {
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (BuildContext context) {
-                return LoginScreen();
-              }));
+              Navigator.pop(context);
             },
             child: Text('Ok'),
           ),
@@ -114,6 +111,10 @@ class _ResetScreenState extends State<ResetScreen> {
         showDialog(
             context: context,
             builder: (context) => BuildShow("Reset Password Success Fully"));
+        Navigator.pushReplacement(context,
+            MaterialPageRoute(builder: (BuildContext context) {
+          return LoginScreen();
+        }));
       }
     }
   }

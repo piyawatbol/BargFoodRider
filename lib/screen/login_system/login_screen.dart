@@ -1,12 +1,11 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_constructors_in_immutables, non_constant_identifier_names, avoid_print, deprecated_member_use
-// ignore_for_file: prefer_const_literals_to_create_immutables
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: deprecated_member_use, unused_local_variable
 import 'dart:convert';
-import 'package:barg_rider_app/screen/home_screen/home_screen.dart';
-import 'package:http/http.dart' as http;
 import 'package:barg_rider_app/ipcon.dart';
-import 'package:barg_rider_app/screen/login_system/forget_password.dart';
-import 'package:barg_rider_app/screen/login_system/register_screen.dart';
+import 'package:barg_rider_app/screen/home_screen/home_screen.dart';
+import 'package:barg_rider_app/screen/login_system/forget_screen/forget_password.dart';
+import 'package:barg_rider_app/screen/login_system/register_screen/confirm_email_screen.dart';
+import 'package:barg_rider_app/screen/login_system/register_screen/register_screen.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -24,6 +23,29 @@ class _LoginScreenState extends State<LoginScreen> {
   bool statusLoading = false;
   final formKey = GlobalKey<FormState>();
   List userList = [];
+
+  accept_email() async {
+    final response = await http.post(
+      Uri.parse('$ipcon/email'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'email': userList[0]['email'],
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        statusLoading = false;
+      });
+      Navigator.push(context,
+          MaterialPageRoute(builder: (BuildContext context) {
+        return ConfrimEmailScreen(email: userList[0]['email']);
+      }));
+    }
+  }
+
   login() async {
     final response = await http.post(
       Uri.parse('$ipcon/login'),
@@ -33,6 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: jsonEncode(<String, String>{
         'user_name': username.text,
         'password': password.text,
+        'status_id': '3'
       }),
     );
     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -45,135 +68,85 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         userList = data;
       });
-
-      print("user id : ${userList[0]['user_id']}");
-      SharedPreferences preferences = await SharedPreferences.getInstance();
-      preferences.setString('user_id', userList[0]['user_id'].toString());
-
-      Navigator.pushReplacement(context,
-          MaterialPageRoute(builder: (BuildContext context) {
-        return HomeScreen();
-      }));
-    } else if (response.statusCode == 201) {
-      showDialog(
+      if (userList[0]['accept_status'] == "0") {
+        showDialog(
           context: context,
           builder: (context) => SimpleDialog(
-                title: Center(
-                    child: Text(
-                  "Username or Password incorrect",
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                )),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(30)),
-                ),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 80),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        onPrimary: Colors.white,
-                        primary: Colors.blue,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(30)),
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: Text('ok'),
+            title: Center(
+                child: Text(
+              "Email Unaccept",
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            )),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(30)),
+            ),
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 80),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    onPrimary: Colors.white,
+                    primary: Colors.blue,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(30)),
                     ),
-                  )
-                ],
-              ));
+                  ),
+                  onPressed: () async {
+                    setState(() {
+                      statusLoading = true;
+                    });
+                    Navigator.pop(context);
+                    accept_email();
+                  },
+                  child: Text('Go to accept email'),
+                ),
+              )
+            ],
+          ),
+        );
+      } else {
+        SharedPreferences preferences = await SharedPreferences.getInstance();
+        preferences.setString('user_id', userList[0]['user_id'].toString());
+        print("login user_id : ${preferences.getString('user_id')}");
+
+        Navigator.pushReplacement(context,
+            MaterialPageRoute(builder: (BuildContext context) {
+          return HomeScreen();
+        }));
+      }
+    } else if (response.statusCode == 201) {
+      showDialog(
+        context: context,
+        builder: (context) => SimpleDialog(
+          title: Center(
+              child: Text(
+            "Username or Password incorrect",
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+          )),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(30)),
+          ),
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 80),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  onPrimary: Colors.white,
+                  primary: Colors.blue,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(30)),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text('ok'),
+              ),
+            )
+          ],
+        ),
+      );
     }
-  }
-
-  Widget BuildInputBoxUser() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Username",
-          style: TextStyle(color: Colors.white),
-        ),
-        SizedBox(
-          height: MediaQuery.of(context).size.height * 0.01,
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: Color(0xFF6CA8F1),
-            borderRadius: BorderRadius.circular(10.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 6.0,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: TextFormField(
-            controller: username,
-            obscureText: false,
-            style: TextStyle(
-              color: Colors.white,
-            ),
-            decoration: InputDecoration(
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.only(top: 14),
-                prefixIcon: Icon(
-                  Icons.person,
-                  color: Colors.white,
-                ),
-                hintText: "Enter your Username",
-                hintStyle: TextStyle(color: Colors.white54)),
-          ),
-        )
-      ],
-    );
-  }
-
-  Widget BuildInputBoxPass() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Password",
-          style: TextStyle(color: Colors.white),
-        ),
-        SizedBox(
-          height: MediaQuery.of(context).size.height * 0.01,
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: Color(0xFF6CA8F1),
-            borderRadius: BorderRadius.circular(10.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 6.0,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: TextFormField(
-            controller: password,
-            obscureText: pass,
-            style: TextStyle(
-              color: Colors.white,
-            ),
-            decoration: InputDecoration(
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.only(top: 14),
-                prefixIcon: Icon(
-                  Icons.lock,
-                  color: Colors.white,
-                ),
-                hintText: "Enter your Password",
-                hintStyle: TextStyle(color: Colors.white54)),
-          ),
-        )
-      ],
-    );
   }
 
   @override
@@ -333,6 +306,94 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget BuildInputBoxPass() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Password",
+          style: TextStyle(color: Colors.white),
+        ),
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.01,
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: Color(0xFF6CA8F1),
+            borderRadius: BorderRadius.circular(10.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 6.0,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextFormField(
+            controller: password,
+            obscureText: pass,
+            style: TextStyle(
+              color: Colors.white,
+            ),
+            decoration: InputDecoration(
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.only(top: 14),
+                prefixIcon: Icon(
+                  Icons.lock,
+                  color: Colors.white,
+                ),
+                hintText: "Enter your Password",
+                hintStyle: TextStyle(color: Colors.white54)),
+          ),
+        )
+      ],
+    );
+  }
+
+  Widget BuildInputBoxUser() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Username",
+          style: TextStyle(color: Colors.white),
+        ),
+        SizedBox(
+          height: MediaQuery.of(context).size.height * 0.01,
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: Color(0xFF6CA8F1),
+            borderRadius: BorderRadius.circular(10.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 6.0,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: TextFormField(
+            controller: username,
+            obscureText: false,
+            style: TextStyle(
+              color: Colors.white,
+            ),
+            decoration: InputDecoration(
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.only(top: 14),
+                prefixIcon: Icon(
+                  Icons.person,
+                  color: Colors.white,
+                ),
+                hintText: "Enter your Username",
+                hintStyle: TextStyle(color: Colors.white54)),
+          ),
+        )
+      ],
     );
   }
 }
