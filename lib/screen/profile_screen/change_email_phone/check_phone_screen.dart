@@ -1,6 +1,10 @@
 // ignore_for_file: deprecated_member_use, unused_local_variable
 import 'dart:convert';
 import 'package:barg_rider_app/ipcon.dart';
+import 'package:barg_rider_app/widget/auto_size_text.dart';
+import 'package:barg_rider_app/widget/back_button.dart';
+import 'package:barg_rider_app/widget/loadingPage.dart';
+import 'package:barg_rider_app/widget/show_aleart.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,75 +19,83 @@ class CheckPhoneScreen extends StatefulWidget {
 class _CheckPhoneScreenState extends State<CheckPhoneScreen> {
   bool statusLoading = false;
   TextEditingController phone = TextEditingController();
+  String? user_id;
 
-  check_phone() async {
-    String? user_id;
+  get_user_id() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     setState(() {
       user_id = preferences.getString('user_id');
     });
+  }
+
+  check_phone() async {
     final response = await http.post(
-      Uri.parse('$ipcon/check_phone/$user_id'),
+      Uri.parse('$ipcon/check_phone'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
-      body: jsonEncode(<String, String>{"phone": phone.text}),
+      body: jsonEncode(<String, String>{
+        'phone': phone.text,
+        'status_id': '3',
+      }),
     );
+    var data = json.decode(response.body);
+    print(data);
     if (response.statusCode == 200) {
       setState(() {
         statusLoading = false;
       });
-      var data = json.decode(response.body);
-      print(data);
-      if (data == "duplicate phone") {
-        showDialog(
-            context: context,
-            builder: (context) => BuildShow("phone is already in use"));
-      } else if (data == "update phone success") {
-        showDialog(
-            context: context,
-            builder: (context) => SimpleDialog(
-                  title: Center(
-                      child: Text("Update Phone Success",
-                          style: TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.bold))),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(30)),
-                  ),
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 80),
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          onPrimary: Colors.white,
-                          primary: Colors.blue,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(30)),
-                          ),
-                        ),
-                        onPressed: () {
-                          Navigator.pop(context);
-                          Navigator.pop(context);
-                          Navigator.pop(context);
-                          Navigator.pop(context);
-                        },
-                        child: Text('Ok'),
-                      ),
-                    )
-                  ],
-                ));
+      if (data == "have phone") {
+        buildShowAlert(context, "Phone alreary in use");
+      } else if (data == "dont have phone") {
+        setState(() {
+          statusLoading = true;
+        });
+        change_phone();
+      }
+    }
+  }
+
+  change_phone() async {
+    final response = await http.patch(
+      Uri.parse('$ipcon/change_phone/$user_id'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        "phone": phone.text,
+      }),
+    );
+    print(response.body);
+    var data = json.decode(response.body);
+    if (response.statusCode == 200) {
+      setState(() {
+        statusLoading = false;
+      });
+      if (data == "update phone success") {
+        Navigator.pop(context);
+        Navigator.pop(context);
+        Navigator.pop(context);
       }
     }
   }
 
   @override
+  void initState() {
+    get_user_id();
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
     return Scaffold(
       body: Stack(
         children: [
           Container(
-            width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.height,
+            width: width,
+            height: height,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
@@ -100,163 +112,114 @@ class _CheckPhoneScreenState extends State<CheckPhoneScreen> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
+                    BackArrowButton(text: "ChangePhone", width2: 0.26),
                     Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 30, vertical: 20),
-                      child: Row(
-                        children: [
-                          IconButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              icon: Icon(
-                                Icons.arrow_back_ios_new,
-                                size: 30,
-                                color: Colors.white,
-                              ))
-                        ],
+                      padding: EdgeInsets.symmetric(vertical: height * 0.04),
+                      child: AutoText(
+                        width: width * 0.6,
+                        text: "Enter New Phone",
+                        fontSize: 30,
+                        color: Colors.white,
+                        text_align: TextAlign.center,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 20, horizontal: 40),
-                      child: Column(
-                        children: [
-                          Text("Enter New Phone",
-                              style: TextStyle(
-                                  fontSize: 30,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold)),
-                          SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.05,
-                          ),
-                          BuildPhoneBox(),
-                          Container(
-                            padding: EdgeInsets.symmetric(vertical: 25),
-                            width: double.infinity,
-                            height: MediaQuery.of(context).size.height * 0.11,
-                            child: RaisedButton(
-                              elevation: 5,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30)),
-                              onPressed: () {
-                                setState(() {
-                                  statusLoading = true;
-                                });
-                                check_phone();
-                              },
-                              child: Text(
-                                "Continue",
-                                style: TextStyle(
-                                    color: Color(0xFF527DAA),
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          )
-                        ],
-                      ),
-                    )
+                    buildEmailBox(),
+                    buildButtonContinue()
                   ],
                 ),
               ),
             ),
           ),
-          Visibility(
-            visible: statusLoading == true ? true : false,
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  statusLoading = false;
-                });
-              },
-              child: Container(
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height,
-                decoration: BoxDecoration(color: Colors.white38),
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.blue,
-                  ),
-                ),
-              ),
-            ),
-          ),
+          LoadingPage(statusLoading: statusLoading)
         ],
       ),
     );
   }
 
-  Widget BuildShow(String? text) {
-    return SimpleDialog(
-      title: Center(
-          child: Text("$text",
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(30)),
-      ),
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 80),
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              onPrimary: Colors.white,
-              primary: Colors.blue,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(30)),
-              ),
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text('Ok'),
+  Widget buildEmailBox() {
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: width * 0.07),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AutoText(
+            width: width * 0.1,
+            text: "Phone",
+            fontSize: 14,
+            color: Colors.white,
+            text_align: TextAlign.left,
+            fontWeight: null,
           ),
-        )
-      ],
+          SizedBox(height: height * 0.004),
+          Container(
+            decoration: BoxDecoration(
+              color: Color(0xFF6CA8F1),
+              borderRadius: BorderRadius.circular(10.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 6.0,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TextFormField(
+              controller: phone,
+              style: TextStyle(
+                color: Colors.white,
+              ),
+              decoration: InputDecoration(
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.only(top: 14),
+                  prefixIcon: Icon(
+                    Icons.key,
+                    color: Colors.white,
+                  ),
+                  hintText: "Enter your New Phone",
+                  hintStyle: TextStyle(color: Colors.white54)),
+            ),
+          )
+        ],
+      ),
     );
   }
 
-  Widget BuildPhoneBox() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Phone",
-          style: TextStyle(color: Colors.white),
-        ),
-        SizedBox(
-          height: MediaQuery.of(context).size.height * 0.01,
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: Color(0xFF6CA8F1),
-            borderRadius: BorderRadius.circular(10.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 6.0,
-                offset: Offset(0, 2),
-              ),
-            ],
+  Widget buildButtonContinue() {
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
+    return Container(
+      margin: EdgeInsets.symmetric(
+          vertical: height * 0.07, horizontal: width * 0.07),
+      width: double.infinity,
+      height: height * 0.055,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.black87,
+          backgroundColor: Colors.white,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(30)),
           ),
-          child: TextFormField(
-            keyboardType: TextInputType.number,
-            controller: phone,
-            style: TextStyle(
-              color: Colors.white,
-            ),
-            decoration: InputDecoration(
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.only(top: 14),
-                prefixIcon: Icon(
-                  Icons.key,
-                  color: Colors.white,
-                ),
-                hintText: "Enter your New Phone",
-                hintStyle: TextStyle(color: Colors.white54)),
+        ),
+        onPressed: () {
+          setState(() {
+            statusLoading = true;
+          });
+          check_phone();
+        },
+        child: Center(
+          child: AutoText(
+            color: Color(0xFF527DAA),
+            fontSize: 24,
+            text: 'Continue',
+            text_align: TextAlign.center,
+            width: width * 0.25,
+            fontWeight: FontWeight.bold,
           ),
-        )
-      ],
+        ),
+      ),
     );
   }
 }

@@ -2,6 +2,9 @@
 import 'dart:convert';
 import 'package:barg_rider_app/ipcon.dart';
 import 'package:barg_rider_app/screen/login_system/register_screen/confirm_email_screen.dart';
+import 'package:barg_rider_app/widget/auto_size_text.dart';
+import 'package:barg_rider_app/widget/back_button.dart';
+import 'package:barg_rider_app/widget/loadingPage.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 
@@ -16,86 +19,76 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool pass = true;
   bool statusLoading = false;
   final formKey = GlobalKey<FormState>();
-  TextEditingController firstname = TextEditingController();
-  TextEditingController lastname = TextEditingController();
-  TextEditingController username = TextEditingController();
-  TextEditingController password = TextEditingController();
+  TextEditingController first_name = TextEditingController();
+  TextEditingController last_name = TextEditingController();
+  TextEditingController user_name = TextEditingController();
+  TextEditingController pass_word = TextEditingController();
   TextEditingController email = TextEditingController();
   TextEditingController phone = TextEditingController();
 
-  Future register() async {
+  check() {
+    bool emailValid =
+        RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@gmail.com")
+            .hasMatch(email.text);
+    if (emailValid == false) {
+      buildShowAlert("Please use Gmail");
+    } else if (first_name.text == "") {
+      buildShowAlert("Please enter your Firstname");
+    } else if (last_name.text == "") {
+      buildShowAlert("Please enter your Lastname");
+    } else if (user_name.text == "") {
+      buildShowAlert("Please enter your Username");
+    } else if (email.text == "") {
+      buildShowAlert("Please enter your Email");
+    } else if (phone.text == "") {
+      buildShowAlert("Please enter your Phone");
+    } else if (pass_word.text == "") {
+      buildShowAlert("Please enter your Password");
+    } else {
+      setState(() {
+        statusLoading = true;
+      });
+      check_duplicate();
+    }
+  }
+
+  check_duplicate() async {
     final response = await http.post(
-      Uri.parse('$ipcon/register'),
+      Uri.parse('$ipcon/check_duplicate'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
       body: jsonEncode(<String, String>{
-        'first_name': firstname.text,
-        'last_name': lastname.text,
-        'user_name': username.text,
-        'password': password.text,
+        'user_name': user_name.text,
         'email': email.text,
         'phone': phone.text,
-        'user_image': '',
         'status_id': '3',
       }),
     );
-
     var data = json.decode(response.body);
     print(data);
     if (response.statusCode == 200) {
       setState(() {
         statusLoading = false;
       });
-    }
-    if (data == "firstname null") {
-      showDialog(
-          context: context,
-          builder: (context) => BuildShow("Please enter your Firstname"));
-    } else if (data == "lastname null") {
-      showDialog(
-          context: context,
-          builder: (context) => BuildShow("Please enter your Lastname"));
-    } else if (data == "username null") {
-      showDialog(
-          context: context,
-          builder: (context) => BuildShow("Please enter your Username"));
-    } else if (data == "email null") {
-      showDialog(
-          context: context,
-          builder: (context) => BuildShow("Please enter your Email"));
-    } else if (data == "password null") {
-      showDialog(
-          context: context,
-          builder: (context) => BuildShow("Please enter your Password"));
-    } else if (data == "password 6") {
-      showDialog(
-          context: context,
-          builder: (context) =>
-              BuildShow("Please enter a password of more than 6 characters"));
-    } else if (data == "duplicate username") {
-      showDialog(
-          context: context,
-          builder: (context) => BuildShow("Username is already in use"));
-    } else if (data == "duplicate email") {
-      showDialog(
-          context: context,
-          builder: (context) => BuildShow("Email is already in use"));
-    } else if (data == "duplicate phone") {
-      showDialog(
-          context: context,
-          builder: (context) => BuildShow("Phone is already in use"));
-    } else if (data == "Resgister Success") {
-      setState(() {
-        statusLoading = true;
-      });
-      sendOtp();
+      if (data == "duplicate username") {
+        buildShowAlert("Username already in use");
+      } else if (data == "duplicate email") {
+        buildShowAlert("Email already in use");
+      } else if (data == "duplicate phone") {
+        buildShowAlert("Phone already in use");
+      } else if (data == "not duplicate") {
+        setState(() {
+          statusLoading = true;
+        });
+        send_otp();
+      }
     }
   }
 
-  sendOtp() async {
+  send_otp() async {
     final response = await http.post(
-      Uri.parse('$ipcon/email'),
+      Uri.parse('$ipcon/send_otp_email'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -111,7 +104,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (data == "send email success") {
         Navigator.push(context,
             MaterialPageRoute(builder: (BuildContext context) {
-          return ConfrimEmailScreen(email: email.text);
+          return ConfirmEmailScreen(
+            email: email.text,
+            first_name: first_name.text,
+            last_name: last_name.text,
+            pass_word: pass_word.text,
+            phone: phone.text,
+            user_name: user_name.text,
+          );
         }));
       }
     }
@@ -119,6 +119,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).requestFocus(FocusNode());
@@ -127,8 +129,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         body: Stack(
           children: [
             Container(
-              width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.height,
+              width: width,
+              height: height,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
@@ -145,76 +147,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: SafeArea(
                   child: Column(
                     children: [
+                      BackArrowButton(text: "Register", width2: 0.18),
                       Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 30, vertical: 20),
-                        child: Row(
+                        padding: EdgeInsets.symmetric(vertical: height * 0.02),
+                        child: AutoText(
+                          color: Colors.white,
+                          fontSize: 35,
+                          fontWeight: FontWeight.bold,
+                          text: 'Register',
+                          text_align: TextAlign.center,
+                          width: width * 0.38,
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: width * 0.07),
+                        child: Column(
                           children: [
-                            IconButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                icon: Icon(
-                                  Icons.arrow_back_ios_new,
-                                  size: 30,
-                                  color: Colors.white,
-                                ))
+                            BulidInputBox("Firstname", first_name, Icons.person,
+                                TextInputType.text, 0.16),
+                            BulidInputBox("Lastname", last_name, Icons.person,
+                                TextInputType.text, 0.16),
+                            BulidInputBox("Username", user_name, Icons.person,
+                                TextInputType.text, 0.17),
+                            BulidInputBox("Email", email, Icons.email,
+                                TextInputType.emailAddress, 0.09),
+                            BulidInputBox("Phone", phone, Icons.phone,
+                                TextInputType.number, 0.11),
+                            BulidInputBoxPass(),
+                            buildRegisButton()
                           ],
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 25),
-                        child: Text(
-                          "Resgister",
-                          style: TextStyle(
-                              fontSize: 40,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Form(
-                        key: formKey,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 40),
-                          child: Column(
-                            children: [
-                              BulidInputBox("Firstname", firstname,
-                                  Icons.person, TextInputType.name),
-                              BulidInputBox("Lastname", lastname, Icons.person,
-                                  TextInputType.name),
-                              BulidInputBox("Username", username, Icons.person,
-                                  TextInputType.name),
-                              BulidInputBox("Email", email, Icons.email,
-                                  TextInputType.emailAddress),
-                              BulidInputBox("Phone", phone, Icons.phone,
-                                  TextInputType.number),
-                              BulidInputBoxPass(),
-                              Container(
-                                padding: EdgeInsets.symmetric(vertical: 25),
-                                width: double.infinity,
-                                height:
-                                    MediaQuery.of(context).size.height * 0.11,
-                                child: RaisedButton(
-                                  elevation: 5,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30)),
-                                  onPressed: () {
-                                    setState(() {
-                                      statusLoading = true;
-                                    });
-                                    register();
-                                  },
-                                  child: Text(
-                                    "Register",
-                                    style: TextStyle(
-                                        color: Color(0xFF527DAA),
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
                         ),
                       ),
                     ],
@@ -222,78 +183,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
             ),
-            Visibility(
-              visible: statusLoading == true ? true : false,
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    statusLoading = false;
-                  });
-                },
-                child: Container(
-                  width: MediaQuery.of(context).size.width,
-                  height: MediaQuery.of(context).size.height,
-                  decoration: BoxDecoration(color: Colors.white38),
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: Colors.blue,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            LoadingPage(statusLoading: statusLoading)
           ],
         ),
       ),
     );
   }
 
-  Widget BuildShow(String? text) {
-    return SimpleDialog(
-      title: Center(
-          child: Text("$text",
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(30)),
-      ),
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 80),
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              onPrimary: Colors.white,
-              primary: Colors.blue,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(30)),
-              ),
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text('Ok'),
-          ),
-        )
-      ],
-    );
-  }
-
   Widget BulidInputBox(String text, TextEditingController controller,
-      IconData? icon, TextInputType? keyboardType) {
+      IconData? icon, TextInputType? keyboardType, double? width_text) {
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 5),
-            child: Row(
-              children: [
-                Text(
-                  "$text",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ],
-            ),
+          AutoText(
+            width: width * width_text!,
+            text: text,
+            fontSize: 14,
+            color: Colors.white,
+            text_align: TextAlign.left,
+            fontWeight: FontWeight.w500,
           ),
+          SizedBox(height: height * 0.007),
           Container(
             decoration: BoxDecoration(
               color: Color(0xFF6CA8F1),
@@ -338,6 +252,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget BulidInputBoxPass() {
+    double width = MediaQuery.of(context).size.width;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Column(
@@ -346,10 +261,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
             padding: const EdgeInsets.symmetric(vertical: 5),
             child: Row(
               children: [
-                Text(
-                  "Password",
-                  style: TextStyle(color: Colors.white),
-                ),
+                AutoText(
+                    width: width * 0.16,
+                    text: "Password",
+                    fontSize: 14,
+                    color: Colors.white,
+                    text_align: TextAlign.left,
+                    fontWeight: FontWeight.w600)
               ],
             ),
           ),
@@ -366,12 +284,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ],
             ),
             child: TextFormField(
-              keyboardType: TextInputType.name,
+              keyboardType: TextInputType.text,
               obscureText: pass,
               style: TextStyle(
                 color: Colors.white,
               ),
-              controller: password,
+              controller: pass_word,
               decoration: InputDecoration(
                 suffixIcon: pass == true
                     ? IconButton(
@@ -418,17 +336,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Show(String? text, Function page) {
-    return showDialog(
+  Widget buildRegisButton() {
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: height * 0.04),
+      width: double.infinity,
+      height: height * 0.055,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.black87,
+          backgroundColor: Colors.white,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(30)),
+          ),
+        ),
+        onPressed: () {
+          check();
+        },
+        child: Center(
+          child: AutoText(
+            color: Color(0xFF527DAA),
+            fontSize: 24,
+            text: 'Register',
+            text_align: TextAlign.center,
+            width: width * 0.18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  buildShowAlert(String? text) {
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
+    showDialog(
       context: context,
       builder: (context) => SimpleDialog(
-        title: Center(child: Text(text.toString())),
+        title: Center(
+            child: Text(
+          "$text",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        )),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(30)),
         ),
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 80),
+            padding: EdgeInsets.symmetric(
+                horizontal: width * 0.1, vertical: height * 0.01),
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 onPrimary: Colors.white,
@@ -438,11 +395,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               onPressed: () {
-                () => page;
+                Navigator.pop(context);
               },
-              child: Text('Ok'),
+              child: AutoText(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                text: 'Ok',
+                text_align: TextAlign.center,
+                width: width * 0.1,
+              ),
             ),
-          )
+          ),
         ],
       ),
     );

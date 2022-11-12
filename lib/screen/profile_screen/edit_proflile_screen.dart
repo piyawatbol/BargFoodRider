@@ -6,6 +6,10 @@ import 'dart:io';
 import 'package:barg_rider_app/ipcon.dart';
 import 'package:barg_rider_app/screen/profile_screen/change_email_phone/check_pass_email_screen.dart';
 import 'package:barg_rider_app/screen/profile_screen/change_email_phone/check_pass_phone_screen.dart';
+import 'package:barg_rider_app/widget/auto_size_text.dart';
+import 'package:barg_rider_app/widget/back_button.dart';
+import 'package:barg_rider_app/widget/loadingPage.dart';
+import 'package:barg_rider_app/widget/show_modol_img.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
@@ -45,37 +49,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     phone = TextEditingController(text: widget.phone);
   }
 
-  Future pickImage() async {
-    try {
-      final image = await ImagePicker().pickImage(source: ImageSource.gallery);
-
-      if (image == null) return;
-
-      final imageTemp = File(image.path);
-
-      setState(() => this.image = imageTemp);
-    } on PlatformException catch (e) {
-      print('Failed to pick image: $e');
-    }
-    Navigator.pop(context);
-  }
-
-  Future pickCamera() async {
-    try {
-      final image = await ImagePicker().pickImage(source: ImageSource.camera);
-
-      if (image == null) return;
-
-      final imageTemp = File(image.path);
-
-      setState(() => this.image = imageTemp);
-    } on PlatformException catch (e) {
-      print('Failed to pick image: $e');
-    }
-    Navigator.pop(context);
-  }
-
-  update_user() async {
+  edit_user() async {
     final response = await http.patch(
       Uri.parse('$ipcon/edit_user/${widget.user_id}'),
       headers: <String, String>{
@@ -92,9 +66,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       setState(() {
         statusLoading = false;
       });
-      if (data == "duplicate email") {
-        print('เมลซ้ำ');
-      } else {
+      if (data == "update success") {
         Navigator.pop(context);
       }
     }
@@ -114,6 +86,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  Future pickImage() async {
+    try {
+      final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (image == null) return;
+      final imageTemp = File(image.path);
+      setState(() => this.image = imageTemp);
+    } on PlatformException catch (e) {
+      print('Failed to pick image: $e');
+    }
+    Navigator.pop(context);
+  }
+
+  Future pickCamera() async {
+    try {
+      final image = await ImagePicker().pickImage(source: ImageSource.camera);
+      if (image == null) return;
+      final imageTemp = File(image.path);
+      setState(() => this.image = imageTemp);
+    } on PlatformException catch (e) {
+      print('Failed to pick image: $e');
+    }
+    Navigator.pop(context);
+  }
+
   @override
   void initState() {
     setTextController();
@@ -122,6 +118,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
     return GestureDetector(
       onTap: () {
         FocusScope.of(context).requestFocus(FocusNode());
@@ -130,8 +128,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         body: Stack(
           children: [
             Container(
-              width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.height,
+              width: width,
+              height: height,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
@@ -148,158 +146,69 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: SafeArea(
                     child: Column(
                   children: [
+                    BackArrowButton(text: "Edit Profile", width2: 0.24),
+                    SizedBox(height: height * 0.02),
+                    buildProfileIcon(),
+                    SizedBox(height: height * 0.03),
                     Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 20, horizontal: 12),
+                      padding: EdgeInsets.symmetric(
+                          vertical: height * 0.022, horizontal: width * 0.08),
                       child: Row(
                         children: [
-                          IconButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            icon: Icon(
-                              Icons.arrow_back_ios_new_outlined,
-                              size: 35,
+                          AutoText(
+                              width: width * 0.3,
+                              text: "My Profile",
+                              fontSize: 28,
                               color: Colors.white,
-                            ),
-                          ),
-                          Text(
-                            "Profile",
-                            style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                          ),
+                              text_align: TextAlign.left,
+                              fontWeight: FontWeight.bold),
                         ],
                       ),
                     ),
-                    SizedBox(
-                      height: 20,
-                    ),
-                    image != null
-                        ? BuildCirCle(FileImage(image!))
-                        : widget.img == "" || widget.img == null
-                            ? BuildCirCle(
-                                AssetImage("assets/images/profile.png"))
-                            : BuildCirCle(
-                                NetworkImage("$path_img/users/${widget.img}")),
-                    SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.05,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 30),
-                      child: Column(
-                        children: [
-                          BulidBox1("FirstName", firstname),
-                          BulidBox1("Lastname", lastname),
-                          BuildBox2("Email", "${widget.email}",
-                              CheckPassEmailScreen()),
-                          BuildBox2("Phone", "${widget.phone}",
-                              CheckPassPhoneScreen()),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 20),
-                            child: SizedBox(
-                              width: MediaQuery.of(context).size.width * 0.3,
-                              height: MediaQuery.of(context).size.height * 0.05,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  onPrimary: Colors.black,
-                                  primary: Colors.white,
-                                  shape: const RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(30)),
-                                  ),
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    statusLoading = true;
-                                  });
-                                  if (image == null) {
-                                    update_user();
-                                  } else {
-                                    update_user();
-                                    update_img();
-                                  }
-                                },
-                                child: Text('Save'),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
+                    BulidBox1("Firstname", firstname),
+                    BulidBox1("Lastname", lastname),
+                    BuildBox2(
+                        "Email", "${widget.email}", CheckPassEmailScreen()),
+                    BuildBox2(
+                        "Phone", "${widget.phone}", CheckPassPhoneScreen()),
+                    buildButtonSave()
                   ],
                 )),
               ),
             ),
-            Visibility(
-              visible: statusLoading == true ? true : false,
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    statusLoading = false;
-                  });
-                },
-                child: Container(
-                  width: MediaQuery.of(context).size.width,
-                  height: MediaQuery.of(context).size.height,
-                  decoration: BoxDecoration(color: Colors.white38),
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: Colors.blue,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            LoadingPage(statusLoading: statusLoading)
           ],
         ),
       ),
     );
   }
 
-  Widget BuildShow(String? text) {
-    return SimpleDialog(
-      title: Center(
-          child: Text("$text",
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(30)),
-      ),
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 80),
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              onPrimary: Colors.white,
-              primary: Colors.blue,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(30)),
-              ),
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text('Ok'),
-          ),
-        )
-      ],
-    );
+  Widget buildProfileIcon() {
+    return image != null
+        ? BuildCirCle(FileImage(image!))
+        : widget.img == "" || widget.img == null
+            ? BuildCirCle(AssetImage("assets/images/profile.png"))
+            : BuildCirCle(NetworkImage("$path_img/users/${widget.img}"));
   }
 
   BuildCirCle(ImageProvider<Object>? backgroundImage) {
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
     return Stack(
       children: [
         CircleAvatar(
-          radius: 85,
+          radius: width * 0.18,
           backgroundColor: Colors.white,
-          child: CircleAvatar(radius: 80, backgroundImage: backgroundImage),
+          child: CircleAvatar(
+              backgroundColor: Colors.grey,
+              radius: width * 0.16,
+              backgroundImage: backgroundImage),
         ),
         Positioned(
           bottom: 0,
           right: 0,
           child: CircleAvatar(
-              radius: 23,
+              radius: width * 0.055,
               backgroundColor: Colors.white,
               child: IconButton(
                 onPressed: () {
@@ -312,7 +221,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                       ),
                       builder: (context) {
-                        return showmodal1();
+                        return ShowMoDalImg(
+                            pickCamera: pickCamera, pickImage: pickImage);
                       });
                 },
                 icon: Icon(
@@ -325,75 +235,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  showmodal1() {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.22,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 5),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              margin: EdgeInsets.symmetric(vertical: 20),
-              width: MediaQuery.of(context).size.width * 0.15,
-              height: MediaQuery.of(context).size.height * 0.008,
-              decoration: BoxDecoration(
-                  color: Colors.grey.shade400,
-                  borderRadius: BorderRadius.circular(30)),
-            ),
-            ListTile(
-              leading: CircleAvatar(
-                  backgroundColor: Colors.grey.shade400,
-                  child: Icon(
-                    Icons.camera_alt,
-                    color: Colors.black,
-                  )),
-              title: Text(
-                "Take photo",
-                style: TextStyle(
-                  fontSize: 18,
-                ),
-              ),
-              onTap: () {
-                pickCamera();
-              },
-            ),
-            ListTile(
-              leading: CircleAvatar(
-                backgroundColor: Colors.grey.shade400,
-                child: Icon(
-                  Icons.photo,
-                  color: Colors.black,
-                ),
-              ),
-              title: Text("Choose from library",
-                  style: TextStyle(
-                    fontSize: 18,
-                  )),
-              onTap: () {
-                pickImage();
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget BulidBox1(String text, TextEditingController? controller) {
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          child: Text(
-            text,
-            style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Container(
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
+    return Padding(
+      padding: EdgeInsets.symmetric(
+          horizontal: width * 0.07, vertical: height * 0.004),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AutoText(
+              width: width * 0.17,
+              text: text,
+              fontSize: 14,
+              color: Colors.white,
+              text_align: TextAlign.left,
+              fontWeight: FontWeight.w600),
+          Container(
+            margin: EdgeInsets.symmetric(vertical: height * 0.002),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15),
               boxShadow: [
@@ -434,68 +293,117 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget BuildBox2(String? title, String? message, Widget? page) {
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          child: Text(
-            "$title",
-            style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-        ),
-        Container(
-          margin: EdgeInsets.symmetric(vertical: 10),
-          height: MediaQuery.of(context).size.height * 0.054,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
+  Widget BuildBox2(String? text, String? message, Widget? page) {
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
+    return Padding(
+      padding: EdgeInsets.symmetric(
+          horizontal: width * 0.07, vertical: height * 0.004),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AutoText(
+            width: width * 0.11,
+            text: text,
+            fontSize: 14,
             color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 4,
-                offset: Offset(2, 4),
-              ),
-            ],
+            text_align: TextAlign.left,
+            fontWeight: FontWeight.w600,
           ),
-          child: Row(
-            children: [
-              SizedBox(
-                width: MediaQuery.of(context).size.width * 0.045,
-              ),
-              Container(
-                width: MediaQuery.of(context).size.width * 0.64,
-                child: Text(
-                  "$message",
-                  style: TextStyle(fontSize: 16),
+          Container(
+            margin: EdgeInsets.symmetric(vertical: height * 0.004),
+            height: MediaQuery.of(context).size.height * 0.054,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 4,
+                  offset: Offset(2, 4),
                 ),
-              ),
-              Container(
-                width: MediaQuery.of(context).size.width * 0.16,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    IconButton(
-                        onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(
-                              builder: (BuildContext context) {
-                            return page!;
-                          }));
-                        },
-                        icon: Icon(Icons.edit)),
-                  ],
+              ],
+            ),
+            child: Row(
+              children: [
+                SizedBox(width: width * 0.045),
+                Container(
+                  width: width * 0.64,
+                  child: Text(
+                    "$message",
+                    style: TextStyle(fontSize: 16),
+                  ),
                 ),
-              )
-            ],
+                Container(
+                  width: MediaQuery.of(context).size.width * 0.16,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                          onPressed: () {
+                            Navigator.push(context, MaterialPageRoute(
+                                builder: (BuildContext context) {
+                              return page!;
+                            }));
+                          },
+                          icon: Icon(Icons.edit)),
+                    ],
+                  ),
+                )
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
+
+  Widget buildButtonSave() {
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: height * 0.05),
+      width: width * 0.3,
+      height: height * 0.05,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.black87,
+          backgroundColor: Colors.white,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(30)),
+          ),
+        ),
+        onPressed: () {
+          if (image == null) {
+            setState(() {
+              statusLoading = true;
+            });
+            edit_user();
+          } else {
+            setState(() {
+              statusLoading = true;
+            });
+            update_img();
+            edit_user();
+          }
+        },
+        child: Center(
+          child: AutoText(
+            color: Color(0xFF527DAA),
+            fontSize: 14,
+            text: 'Save',
+            text_align: TextAlign.center,
+            width: width * 0.29,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+  
 }

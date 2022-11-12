@@ -1,5 +1,4 @@
 // ignore_for_file: prefer_const_constructors_in_immutables, prefer_const_constructors, avoid_unnecessary_containers, prefer_const_literals_to_create_immutables
-
 import 'package:barg_rider_app/screen/home_screen/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -137,8 +136,8 @@ class _GoCustomerScreenState extends State<GoCustomerScreen> {
                           height: MediaQuery.of(context).size.height * 0.05,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              onPrimary: Colors.white,
-                              primary: Colors.green,
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.green,
                               shape: const RoundedRectangleBorder(
                                 borderRadius:
                                     BorderRadius.all(Radius.circular(30)),

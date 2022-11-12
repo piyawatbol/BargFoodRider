@@ -1,5 +1,4 @@
 // ignore_for_file: must_be_immutable
-
 import 'package:barg_rider_app/ipcon.dart';
 import 'package:flutter/material.dart';
 
@@ -22,7 +21,8 @@ class _ShowBigImgState extends State<ShowBigImg> {
             Container(
                 width: MediaQuery.of(context).size.width,
                 height: MediaQuery.of(context).size.height,
-                child: Center(child: Image.network("$path_img/${widget.img}"))),
+                child: Center(
+                    child: Image.network("$path_img/users/${widget.img}"))),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [

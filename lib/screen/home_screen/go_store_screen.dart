@@ -133,8 +133,7 @@ class _GoStoreScreenState extends State<GoStoreScreen> {
                           height: MediaQuery.of(context).size.height * 0.05,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              onPrimary: Colors.white,
-                              primary: Colors.green,
+                              foregroundColor: Colors.white, backgroundColor: Colors.green,
                               shape: const RoundedRectangleBorder(
                                 borderRadius:
                                     BorderRadius.all(Radius.circular(30)),

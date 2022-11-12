@@ -1,48 +1,100 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_constructors_in_immutables, non_constant_identifier_names, deprecated_member_use, unused_local_variable
-// ignore_for_file: prefer_const_literals_to_create_immutables
+// ignore_for_file: deprecated_member_use, must_be_immutable
+import 'dart:async';
 import 'dart:convert';
 import 'package:barg_rider_app/ipcon.dart';
-import 'package:barg_rider_app/screen/login_system/forget_screen/check_otp_screen.dart';
 import 'package:barg_rider_app/widget/auto_size_text.dart';
 import 'package:barg_rider_app/widget/back_button.dart';
 import 'package:barg_rider_app/widget/loadingPage.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class ForgetPassword extends StatefulWidget {
-  ForgetPassword({Key? key}) : super(key: key);
+class CheckOtpScreen2 extends StatefulWidget {
+  String email;
+  CheckOtpScreen2({required this.email});
+
   @override
-  State<ForgetPassword> createState() => _ForgetPasswordState();
+  State<CheckOtpScreen2> createState() => _CheckOtpScreen2State();
 }
 
-class _ForgetPasswordState extends State<ForgetPassword> {
+class _CheckOtpScreen2State extends State<CheckOtpScreen2> {
   bool statusLoading = false;
-  TextEditingController email = TextEditingController();
+  TextEditingController otp = TextEditingController();
+  String? user_id;
+  int _Counter = 60;
+  late Timer _timer;
 
-  check_email() async {
+  get_user_id() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    setState(() {
+      user_id = preferences.getString('user_id');
+    });
+  }
+
+  void startTimer() {
+    _Counter = 60;
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (_Counter > 0) {
+        if (this.mounted) {
+          setState(() {
+            _Counter--;
+          });
+        }
+      } else {
+        _timer.cancel();
+      }
+    });
+  }
+
+  check_otp() async {
     final response = await http.post(
-      Uri.parse('$ipcon/check_email'),
+      Uri.parse('$ipcon/check_otp'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
       body: jsonEncode(<String, String>{
-        'email': email.text,
-        'status_id': '3',
+        'email': widget.email,
+        'otp': otp.text,
       }),
     );
-    var data = json.decode(response.body);
-    print(data);
     if (response.statusCode == 200) {
       setState(() {
         statusLoading = false;
       });
-      if (data == "dont have email") {
-        buildShowAlert("Email not found");
-      } else if (data == "have email") {
+      var data = json.decode(response.body);
+      print(data);
+      if (data == "not correct") {
+        buildShowAlert("Otp Incorrect");
+      } else if (data == "correct") {
         setState(() {
           statusLoading = true;
         });
-        send_otp();
+        change_email();
+      }
+    }
+  }
+
+  change_email() async {
+    final response = await http.patch(
+      Uri.parse('$ipcon/change_email/$user_id'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        "email": widget.email,
+      }),
+    );
+    print(response.body);
+    var data = json.decode(response.body);
+    if (response.statusCode == 200) {
+      setState(() {
+        statusLoading = false;
+      });
+      if (data == "update email success") {
+        Navigator.pop(context);
+        Navigator.pop(context);
+        Navigator.pop(context);
+        Navigator.pop(context);
       }
     }
   }
@@ -54,23 +106,27 @@ class _ForgetPasswordState extends State<ForgetPassword> {
         'Content-Type': 'application/json; charset=UTF-8',
       },
       body: jsonEncode(<String, String>{
-        'email': email.text,
+        'email': widget.email,
       }),
     );
     var data = json.decode(response.body);
+    print(data);
     if (response.statusCode == 200) {
       setState(() {
         statusLoading = false;
       });
       if (data == "send email success") {
-        Navigator.push(context,
-            MaterialPageRoute(builder: (BuildContext context) {
-          return CheckOtpScreen(
-            email: email.text,
-          );
-        }));
+        buildShowAlert("Send email Again");
+        startTimer();
       }
     }
+  }
+
+  @override
+  void initState() {
+    startTimer();
+    get_user_id();
+    super.initState();
   }
 
   @override
@@ -103,20 +159,21 @@ class _ForgetPasswordState extends State<ForgetPassword> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      BackArrowButton(text: "Forget Password", width2: 0.36),
+                      BackArrowButton(text: "Otp", width2: 0.1),
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: height * 0.035),
+                        padding: EdgeInsets.symmetric(vertical: height * 0.05),
                         child: AutoText(
-                          width: width * 0.59,
-                          text: "Forget Password",
-                          fontSize: 30,
+                          width: width * 0.7,
+                          text: "${widget.email}",
+                          fontSize: 24,
                           color: Colors.white,
                           text_align: TextAlign.center,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      buildEmailBox(),
-                      buildContinueButton()
+                      buildInputBoxOtp(),
+                      buildSendAgain(),
+                      buildButtonContinnue(),
                     ],
                   ),
                 ),
@@ -129,23 +186,24 @@ class _ForgetPasswordState extends State<ForgetPassword> {
     );
   }
 
-  Widget buildEmailBox() {
-    double width = MediaQuery.of(context).size.width;
+  Widget buildInputBoxOtp() {
     double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: width * 0.07),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AutoText(
-              width: width * 0.09,
-              text: "Email",
-              fontSize: 14,
-              color: Colors.white,
-              text_align: TextAlign.left,
-              fontWeight: null),
+            width: width * 0.07,
+            text: "Otp",
+            fontSize: 14,
+            color: Colors.white,
+            text_align: TextAlign.left,
+            fontWeight: FontWeight.w600,
+          ),
           SizedBox(
-            height: MediaQuery.of(context).size.height * 0.005,
+            height: height * 0.01,
           ),
           Container(
             decoration: BoxDecoration(
@@ -159,20 +217,24 @@ class _ForgetPasswordState extends State<ForgetPassword> {
                 ),
               ],
             ),
-            child: TextFormField(
-              controller: email,
+            child: TextField(
+              keyboardType: TextInputType.number,
+              controller: otp,
+              obscureText: false,
               style: TextStyle(
                 color: Colors.white,
               ),
               decoration: InputDecoration(
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.only(top: 14),
-                  prefixIcon: Icon(
-                    Icons.email,
-                    color: Colors.white,
-                  ),
-                  hintText: "Enter your Email",
-                  hintStyle: TextStyle(color: Colors.white54)),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.only(top: 14),
+                prefixIcon: Icon(
+                  Icons.person,
+                  color: Colors.white,
+                ),
+                hintMaxLines: 1,
+                hintText: "Enter your otp",
+                hintStyle: TextStyle(color: Colors.white54, fontSize: 14),
+              ),
             ),
           )
         ],
@@ -180,12 +242,44 @@ class _ForgetPasswordState extends State<ForgetPassword> {
     );
   }
 
-  Widget buildContinueButton() {
+  Widget buildSendAgain() {
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
+    return _Counter == 0
+        ? TextButton(
+            onPressed: () {
+              setState(() {
+                statusLoading = true;
+              });
+              send_otp();
+            },
+            child: AutoText(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: null,
+              text: 'send again',
+              text_align: TextAlign.center,
+              width: width * 0.18,
+            ))
+        : Padding(
+            padding: EdgeInsets.symmetric(vertical: height * 0.02),
+            child: AutoText(
+              width: width * 0.31,
+              text: "Resend in $_Counter seconds",
+              fontSize: 14,
+              color: Colors.white,
+              text_align: TextAlign.center,
+              fontWeight: null,
+            ),
+          );
+  }
+
+  Widget buildButtonContinnue() {
     double height = MediaQuery.of(context).size.height;
     double width = MediaQuery.of(context).size.width;
     return Container(
       margin: EdgeInsets.symmetric(
-          vertical: height * 0.05, horizontal: width * 0.07),
+          vertical: height * 0.04, horizontal: width * 0.07),
       width: double.infinity,
       height: height * 0.055,
       child: ElevatedButton(
@@ -197,25 +291,18 @@ class _ForgetPasswordState extends State<ForgetPassword> {
           ),
         ),
         onPressed: () {
-          bool emailValid =
-              RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@gmail.com")
-                  .hasMatch(email.text);
-          if (emailValid == false) {
-            buildShowAlert("Please use Gmail");
-          } else {
-            setState(() {
-              statusLoading = true;
-            });
-            check_email();
-          }
+          setState(() {
+            statusLoading = true;
+          });
+          check_otp();
         },
         child: Center(
           child: AutoText(
             color: Color(0xFF527DAA),
             fontSize: 24,
-            text: 'Continue',
+            text: 'Continnue',
             text_align: TextAlign.center,
-            width: width * 0.27,
+            width: width * 0.31,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -226,7 +313,7 @@ class _ForgetPasswordState extends State<ForgetPassword> {
   buildShowAlert(String? text) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
-    showDialog(
+    return showDialog(
       context: context,
       builder: (context) => SimpleDialog(
         title: Center(

@@ -3,11 +3,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:barg_rider_app/ipcon.dart';
 import 'package:barg_rider_app/screen/login_system/forget_screen/reset_screen.dart';
+import 'package:barg_rider_app/widget/auto_size_text.dart';
+import 'package:barg_rider_app/widget/back_button.dart';
+import 'package:barg_rider_app/widget/loadingPage.dart';
 import 'package:http/http.dart' as http;
-
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class CheckOtpScreen extends StatefulWidget {
   String email;
@@ -19,13 +19,7 @@ class CheckOtpScreen extends StatefulWidget {
 
 class _CheckOtpScreenState extends State<CheckOtpScreen> {
   bool statusLoading = false;
-  TextEditingController email = TextEditingController();
-  TextEditingController num1 = TextEditingController();
-  TextEditingController num2 = TextEditingController();
-  TextEditingController num3 = TextEditingController();
-  TextEditingController num4 = TextEditingController();
-  TextEditingController num5 = TextEditingController();
-  TextEditingController num6 = TextEditingController();
+  TextEditingController otp = TextEditingController();
 
   int _Counter = 60;
   late Timer _timer;
@@ -46,36 +40,39 @@ class _CheckOtpScreenState extends State<CheckOtpScreen> {
     });
   }
 
-  checkOtp(sum) async {
+  check_otp(sum) async {
     final response = await http.post(
-      Uri.parse('$ipcon/checkOtp'),
+      Uri.parse('$ipcon/check_otp'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
       body: jsonEncode(<String, String>{
         'email': widget.email,
-        'checkOtp': sum.toString(),
+        'otp': otp.text,
       }),
     );
     if (response.statusCode == 200) {
+      setState(() {
+        statusLoading = false;
+      });
       var data = json.decode(response.body);
-      if (data == "Correct") {
+      print(data);
+      if (data == "correct") {
         Navigator.push(context,
             MaterialPageRoute(builder: (BuildContext context) {
           return ResetScreen(
             email: widget.email,
           );
         }));
-      } else if (data == "Not Correct") {
-        showDialog(
-            context: context, builder: (context) => BuildShow("Otp Incorrect"));
+      } else if (data == "not correct") {
+        buildShowAlert("Otp Incorrect");
       }
     }
   }
 
-  sendOtp() async {
+  send_otp() async {
     final response = await http.post(
-      Uri.parse('$ipcon/email'),
+      Uri.parse('$ipcon/send_otp_email'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
@@ -84,19 +81,14 @@ class _CheckOtpScreenState extends State<CheckOtpScreen> {
       }),
     );
     var data = json.decode(response.body);
+    print(data);
     if (response.statusCode == 200) {
       setState(() {
         statusLoading = false;
       });
       if (data == "send email success") {
+        buildShowAlert("Send email Again");
         startTimer();
-        showDialog(
-            context: context,
-            builder: (context) => BuildShow("Send email again"));
-      } else if (data == "not have email") {
-        showDialog(
-            context: context,
-            builder: (context) => BuildShow("Email not found"));
       }
     }
   }
@@ -109,215 +101,226 @@ class _CheckOtpScreenState extends State<CheckOtpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.height,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF73AEF5),
-                  Color(0xFF61A4F1),
-                  Color(0xFF478De0),
-                  Color(0xFF398AE5)
-                ],
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).requestFocus(FocusNode());
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            Container(
+              width: width,
+              height: height,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF73AEF5),
+                    Color(0xFF61A4F1),
+                    Color(0xFF478De0),
+                    Color(0xFF398AE5)
+                  ],
+                ),
               ),
-            ),
-            child: SafeArea(
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 20),
-                    child: Row(
-                      children: [
-                        IconButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            icon: Icon(
-                              Icons.arrow_back_ios_new,
-                              size: 30,
-                              color: Colors.white,
-                            ))
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 30),
-                    child: Column(
-                      children: [
-                        SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.04),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          child: Text(
-                            "${widget.email}",
-                            style: TextStyle(
-                                fontSize: 24,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                          ),
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      BackArrowButton(text: "Otp", width2: 0.1),
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: height * 0.05),
+                        child: AutoText(
+                          width: width * 0.7,
+                          text: "${widget.email}",
+                          fontSize: 24,
+                          color: Colors.white,
+                          text_align: TextAlign.center,
+                          fontWeight: FontWeight.bold,
                         ),
-                        SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.05),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            BuildBoxOtp(num1),
-                            BuildBoxOtp(num2),
-                            BuildBoxOtp(num3),
-                            BuildBoxOtp(num4),
-                            BuildBoxOtp(num5),
-                            BuildBoxOtp(num6),
-                          ],
-                        ),
-                        SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.03),
-                        _Counter == 0
-                            ? TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    statusLoading = true;
-                                  });
-                                  sendOtp();
-                                },
-                                child: Text(
-                                  "send again ",
-                                  style: TextStyle(
-                                      fontSize: 14, color: Colors.white),
-                                ))
-                            : Text("Resend in $_Counter seconds",
-                                style: TextStyle(
-                                    fontSize: 14, color: Colors.white)),
-                        Container(
-                          padding: EdgeInsets.symmetric(vertical: 25),
-                          width: double.infinity,
-                          height: MediaQuery.of(context).size.height * 0.11,
-                          child: RaisedButton(
-                            elevation: 5,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30)),
-                            onPressed: () {
-                              final sum = num1.text +
-                                  num2.text +
-                                  num3.text +
-                                  num4.text +
-                                  num5.text +
-                                  num6.text;
-                              print(sum);
-                              checkOtp(sum);
-                            },
-                            child: Text(
-                              "Continue",
-                              style: TextStyle(
-                                  color: Color(0xFF527DAA),
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Visibility(
-            visible: statusLoading == true ? true : false,
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  statusLoading = false;
-                });
-              },
-              child: Container(
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height,
-                decoration: BoxDecoration(color: Colors.white38),
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.blue,
+                      ),
+                      buildInputBoxOtp(),
+                      buildSendAgain(),
+                      buildButtonContinnue(),
+                    ],
                   ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget BuildBoxOtp(TextEditingController? controller) {
-    return Container(
-      height: MediaQuery.of(context).size.width * 0.12,
-      width: MediaQuery.of(context).size.height * 0.05,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        color: Color(0xFF6CA8F1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 6.0,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: TextField(
-        style: TextStyle(color: Colors.white),
-        controller: controller,
-        onChanged: (value) {
-          if (value.length == 1) {
-            FocusScope.of(context).nextFocus();
-          }
-          if (value.length == 0) {
-            FocusScope.of(context).nextFocus();
-          }
-        },
-        decoration: InputDecoration(
-          border: InputBorder.none,
+            LoadingPage(statusLoading: statusLoading)
+          ],
         ),
-        textAlign: TextAlign.center,
-        keyboardType: TextInputType.number,
-        inputFormatters: [
-          LengthLimitingTextInputFormatter(1),
-          FilteringTextInputFormatter.digitsOnly
-        ],
       ),
     );
   }
 
-  Widget BuildShow(String? text) {
-    return SimpleDialog(
-      title: Center(
-          child: Text("$text",
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(30)),
-      ),
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 80),
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              onPrimary: Colors.white,
-              primary: Colors.blue,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(30)),
+  Widget buildInputBoxOtp() {
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: width * 0.07),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AutoText(
+            width: width * 0.07,
+            text: "Otp",
+            fontSize: 14,
+            color: Colors.white,
+            text_align: TextAlign.left,
+            fontWeight: FontWeight.w600,
+          ),
+          SizedBox(
+            height: height * 0.01,
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: Color(0xFF6CA8F1),
+              borderRadius: BorderRadius.circular(10.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 6.0,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TextField(
+              keyboardType: TextInputType.number,
+              controller: otp,
+              obscureText: false,
+              style: TextStyle(
+                color: Colors.white,
+              ),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.only(top: 14),
+                prefixIcon: Icon(
+                  Icons.person,
+                  color: Colors.white,
+                ),
+                hintMaxLines: 1,
+                hintText: "Enter your otp",
+                hintStyle: TextStyle(color: Colors.white54, fontSize: 14),
               ),
             ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget buildSendAgain() {
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
+    return _Counter == 0
+        ? TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              setState(() {
+                statusLoading = true;
+              });
+              send_otp();
             },
-            child: Text('Ok'),
+            child: AutoText(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: null,
+              text: 'send again',
+              text_align: TextAlign.center,
+              width: width * 0.18,
+            ))
+        : Padding(
+            padding: EdgeInsets.symmetric(vertical: height * 0.02),
+            child: AutoText(
+              width: width * 0.31,
+              text: "Resend in $_Counter seconds",
+              fontSize: 14,
+              color: Colors.white,
+              text_align: TextAlign.center,
+              fontWeight: null,
+            ),
+          );
+  }
+
+  Widget buildButtonContinnue() {
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
+    return Container(
+      margin: EdgeInsets.symmetric(
+          vertical: height * 0.04, horizontal: width * 0.07),
+      width: double.infinity,
+      height: height * 0.055,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.black87,
+          backgroundColor: Colors.white,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(30)),
           ),
-        )
-      ],
+        ),
+        onPressed: () {
+          setState(() {
+            statusLoading = true;
+          });
+          check_otp(otp.text);
+        },
+        child: Center(
+          child: AutoText(
+            color: Color(0xFF527DAA),
+            fontSize: 24,
+            text: 'Continnue',
+            text_align: TextAlign.center,
+            width: width * 0.31,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  buildShowAlert(String? text) {
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
+    return showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Center(
+            child: Text(
+          "$text",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        )),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(30)),
+        ),
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(
+                horizontal: width * 0.1, vertical: height * 0.01),
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                onPrimary: Colors.white,
+                primary: Colors.blue,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(30)),
+                ),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: AutoText(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                text: 'Ok',
+                text_align: TextAlign.center,
+                width: width * 0.1,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

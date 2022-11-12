@@ -1,7 +1,12 @@
 // ignore_for_file: deprecated_member_use, unused_local_variable
+
 import 'dart:convert';
 import 'package:barg_rider_app/ipcon.dart';
 import 'package:barg_rider_app/screen/profile_screen/change_email_phone/check_email_screen.dart';
+import 'package:barg_rider_app/widget/auto_size_text.dart';
+import 'package:barg_rider_app/widget/back_button.dart';
+import 'package:barg_rider_app/widget/loadingPage.dart';
+import 'package:barg_rider_app/widget/show_aleart.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,14 +15,14 @@ class CheckPassEmailScreen extends StatefulWidget {
   CheckPassEmailScreen({Key? key}) : super(key: key);
 
   @override
-  State<CheckPassEmailScreen> createState() =>
-      _CheckPassEmailScreenState();
+  State<CheckPassEmailScreen> createState() => _CheckPassEmailScreenState();
 }
 
 class _CheckPassEmailScreenState extends State<CheckPassEmailScreen> {
   bool pass = true;
   bool statusLoading = false;
-  TextEditingController password = TextEditingController();
+  TextEditingController pass_word = TextEditingController();
+
   check_password() async {
     String? user_id;
     SharedPreferences preferences = await SharedPreferences.getInstance();
@@ -29,7 +34,7 @@ class _CheckPassEmailScreenState extends State<CheckPassEmailScreen> {
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
-      body: jsonEncode(<String, String>{"password": password.text}),
+      body: jsonEncode(<String, String>{"pass_word": pass_word.text}),
     );
     if (response.statusCode == 200) {
       setState(() {
@@ -42,215 +47,177 @@ class _CheckPassEmailScreenState extends State<CheckPassEmailScreen> {
           return CheckEmailScreen();
         }));
       } else if (data == "not correct") {
-        showDialog(
-            context: context,
-            builder: (context) => BuildShow("This Password Incorrect"));
+        buildShowAlert(context, "Password Incorrect");
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.height,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF73AEF5),
-                  Color(0xFF61A4F1),
-                  Color(0xFF478De0),
-                  Color(0xFF398AE5)
-                ],
-              ),
-            ),
-            child: SafeArea(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 30, vertical: 20),
-                      child: Row(
-                        children: [
-                          IconButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              icon: Icon(
-                                Icons.arrow_back_ios_new,
-                                size: 30,
-                                color: Colors.white,
-                              ))
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 20, horizontal: 40),
-                      child: Column(
-                        children: [
-                          Text("Enteryour Password",
-                              style: TextStyle(
-                                  fontSize: 30,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold)),
-                          SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.05,
-                          ),
-                          BuildPassBox(),
-                          Container(
-                            padding: EdgeInsets.symmetric(vertical: 25),
-                            width: double.infinity,
-                            height: MediaQuery.of(context).size.height * 0.11,
-                            child: RaisedButton(
-                              elevation: 5,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30)),
-                              onPressed: () {
-                                setState(() {
-                                  statusLoading = true;
-                                });
-                                check_password();
-                              },
-                              child: Text(
-                                "Continue",
-                                style: TextStyle(
-                                    color: Color(0xFF527DAA),
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          )
-                        ],
-                      ),
-                    )
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
+    return GestureDetector(
+      onTap: () {
+        FocusScope.of(context).requestFocus(FocusNode());
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            Container(
+              width: width,
+              height: height,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF73AEF5),
+                    Color(0xFF61A4F1),
+                    Color(0xFF478De0),
+                    Color(0xFF398AE5)
                   ],
                 ),
               ),
-            ),
-          ),
-          Visibility(
-            visible: statusLoading == true ? true : false,
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  statusLoading = false;
-                });
-              },
-              child: Container(
-                width: MediaQuery.of(context).size.width,
-                height: MediaQuery.of(context).size.height,
-                decoration: BoxDecoration(color: Colors.white38),
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.blue,
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      BackArrowButton(text: "Check Password", width2: 0.36),
+                      Column(
+                        children: [
+                          Padding(
+                            padding:
+                                EdgeInsets.symmetric(vertical: height * 0.04),
+                            child: AutoText(
+                              width: width * 0.45,
+                              text: "Enter Password",
+                              fontSize: 24,
+                              color: Colors.white,
+                              text_align: TextAlign.center,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          buildBoxPass(),
+                          buildButtonContinue()
+                        ],
+                      )
+                    ],
                   ),
                 ),
               ),
             ),
+            LoadingPage(statusLoading: statusLoading)
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildBoxPass() {
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: width * 0.07),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AutoText(
+            width: width * 0.15,
+            text: "Password",
+            fontSize: 14,
+            color: Colors.white,
+            text_align: TextAlign.left,
+            fontWeight: null,
           ),
+          SizedBox(height: height * 0.004),
+          Container(
+            decoration: BoxDecoration(
+              color: Color(0xFF6CA8F1),
+              borderRadius: BorderRadius.circular(10.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 6.0,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: TextFormField(
+              obscureText: pass,
+              controller: pass_word,
+              style: TextStyle(
+                color: Colors.white,
+              ),
+              decoration: InputDecoration(
+                  suffixIcon: pass == true
+                      ? IconButton(
+                          onPressed: () {
+                            setState(() {
+                              pass = !pass;
+                            });
+                          },
+                          icon: Icon(
+                            Icons.visibility_off,
+                            color: Colors.white,
+                          ))
+                      : IconButton(
+                          onPressed: () {
+                            setState(() {
+                              pass = !pass;
+                            });
+                          },
+                          icon: Icon(
+                            Icons.visibility,
+                            color: Colors.white,
+                          )),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.only(top: 14),
+                  prefixIcon: Icon(
+                    Icons.key,
+                    color: Colors.white,
+                  ),
+                  hintText: "Enter your Password",
+                  hintStyle: TextStyle(color: Colors.white54)),
+            ),
+          )
         ],
       ),
     );
   }
 
-  Widget BuildShow(String? text) {
-    return SimpleDialog(
-      title: Center(
-          child: Text("$text",
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(30)),
+  Widget buildButtonContinue() {
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
+    return Container(
+      margin: EdgeInsets.symmetric(
+          vertical: height * 0.07, horizontal: width * 0.07),
+      width: double.infinity,
+      height: height * 0.055,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.black87,
+          backgroundColor: Colors.white,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(30)),
+          ),
+        ),
+        onPressed: () {
+          setState(() {
+            statusLoading = true;
+          });
+          check_password();
+        },
+        child: Center(
+          child: AutoText(
+            color: Color(0xFF527DAA),
+            fontSize: 24,
+            text: 'Continue',
+            text_align: TextAlign.center,
+            width: width * 0.25,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 80),
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              onPrimary: Colors.white,
-              primary: Colors.blue,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(30)),
-              ),
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text('Ok'),
-          ),
-        )
-      ],
-    );
-  }
-
-  Widget BuildPassBox() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Password",
-          style: TextStyle(color: Colors.white),
-        ),
-        SizedBox(
-          height: MediaQuery.of(context).size.height * 0.01,
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: Color(0xFF6CA8F1),
-            borderRadius: BorderRadius.circular(10.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 6.0,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: TextFormField(
-            obscureText: pass,
-            controller: password,
-            style: TextStyle(
-              color: Colors.white,
-            ),
-            decoration: InputDecoration(
-                suffixIcon: pass == true
-                    ? IconButton(
-                        onPressed: () {
-                          setState(() {
-                            pass = !pass;
-                          });
-                        },
-                        icon: Icon(
-                          Icons.visibility_off,
-                          color: Colors.white,
-                        ))
-                    : IconButton(
-                        onPressed: () {
-                          setState(() {
-                            pass = !pass;
-                          });
-                        },
-                        icon: Icon(
-                          Icons.visibility,
-                          color: Colors.white,
-                        )),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.only(top: 14),
-                prefixIcon: Icon(
-                  Icons.key,
-                  color: Colors.white,
-                ),
-                hintText: "Enter your Password",
-                hintStyle: TextStyle(color: Colors.white54)),
-          ),
-        )
-      ],
     );
   }
 }

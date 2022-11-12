@@ -1,15 +1,13 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_constructors_in_immutables, avoid_unnecessary_containers, sized_box_for_whitespace, avoid_print, unused_element, dead_code, non_constant_identifier_names
-// ignore_for_file: prefer_const_literals_to_create_immutables
 import 'dart:convert';
+import 'package:barg_rider_app/screen/profile_screen/profile_screen.dart';
+import 'package:barg_rider_app/widget/auto_size_text.dart';
+import 'package:barg_rider_app/widget/loadingPage.dart';
 import 'package:http/http.dart' as http;
 import 'package:barg_rider_app/ipcon.dart';
-import 'package:barg_rider_app/screen/home_screen/go_store_screen.dart';
-import 'package:barg_rider_app/screen/profile_screen/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:shimmer/shimmer.dart';
 
 class HomeScreen extends StatefulWidget {
   HomeScreen({Key? key}) : super(key: key);
@@ -21,8 +19,17 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   GoogleMapController? mapController;
   Position? driverLocation;
-  bool value = true;
+  bool status_user = true;
   List userList = [];
+  List requestList = [];
+  List order_List = [];
+  List amountList = [];
+  List priceList = [];
+  int sum_amount = 0;
+  int sum_price = 0;
+  bool statusLoading = false;
+  String? user_id;
+
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
   }
@@ -54,245 +61,373 @@ class _HomeScreenState extends State<HomeScreen> {
     return driverLocation;
   }
 
-  get_id() async {
-    String? user_id;
+  get_user() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     setState(() {
       user_id = preferences.getString('user_id');
     });
-    if (user_id == null || user_id == "") {
-      return userList;
-    }
-    final response = await http.get(Uri.parse("$ipcon/get_id/$user_id"));
+    final response = await http.get(Uri.parse("$ipcon/get_user/$user_id"));
     var data = json.decode(response.body);
 
+    setState(() {
+      userList = data;
+    });
+
+    return userList;
+  }
+
+  get_request() async {
+    final response = await http.get(Uri.parse("$ipcon/get_request_rider"));
+    var data = json.decode(response.body);
     if (this.mounted) {
       setState(() {
-        userList = data;
+        requestList = data;
       });
-      return userList;
+    }
+  }
+
+  status_off() {
+    requestList.clear();
+  }
+
+  get_sum_amout_price(String? _order_id, index) async {
+    final response = await http.get(Uri.parse("$ipcon/get_order/$_order_id"));
+    var data = json.decode(response.body);
+    if (this.mounted) {
+      setState(() {
+        order_List = data;
+        sum_amount = 0;
+        sum_price = 0;
+      });
+    }
+    for (var i = 0; i < order_List.length; i++) {
+      int amount = int.parse(order_List[i]['amount']);
+      int price = int.parse(order_List[i]['price']);
+
+      sum_amount = sum_amount + amount;
+      sum_price = sum_price + price;
+    }
+    if (amountList.length < requestList.length) {
+      amountList.add('$sum_amount');
+      priceList.add('$sum_price');
+    } else {
+      amountList[index] = sum_amount.toString();
+      priceList[index] = sum_price.toString();
+    }
+  }
+
+  update_request(request_id) async {
+    final response = await http.post(
+      Uri.parse('$ipcon/update_request_rider'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        "request_id": request_id.toString(),
+        "status": "4",
+        "rider_id": user_id.toString(),
+        "rider_lati": driverLocation!.latitude.toString(),
+        "rider_longti": driverLocation!.longitude.toString(),
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        statusLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
     return Scaffold(
-        body: Stack(
-      children: [
-        Container(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
+      body: Container(
+        width: width,
+        height: height,
+        child: Stack(
+          children: [
+            buildMap(),
+            buildProfile(),
+            buildListOrder(),
+            LoadingPage(statusLoading: statusLoading)
+          ],
         ),
-        Container(
-          color: Colors.white,
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height * 0.5,
-          child: FutureBuilder(
-            future: _getLocation(),
-            builder: (BuildContext context, AsyncSnapshot<Position?> snapshot) {
-              if (snapshot.hasData) {
-                return GoogleMap(
-                  zoomControlsEnabled: false,
-                  mapType: MapType.normal,
-                  myLocationButtonEnabled: false,
-                  onMapCreated: _onMapCreated,
-                  myLocationEnabled: true,
-                  initialCameraPosition: CameraPosition(
-                    zoom: 18,
-                    target: LatLng(
-                        driverLocation!.latitude, driverLocation!.longitude),
-                  ),
-                );
-              } else {
-                return Container(
-                  color: Colors.white,
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-            },
-          ),
-        ),
-        GestureDetector(
-          onTap: () {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (BuildContext context) {
-              return ProfileScreen();
-            }));
-          },
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  FutureBuilder(
-                    future: get_id(),
-                    builder: (BuildContext context, AsyncSnapshot snapshot) {
-                      int index = 0;
-                      if (snapshot.hasData) {
-                        return snapshot.data[index]['user_image'] == null ||
-                                snapshot.data[index]['user_image'] == ""
+      ),
+    );
+  }
+
+  Widget buildMap() {
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
+    return Container(
+      color: Colors.white,
+      width: width,
+      height: height * 0.45,
+      child: FutureBuilder(
+        future: _getLocation(),
+        builder: (BuildContext context, AsyncSnapshot<Position?> snapshot) {
+          if (snapshot.hasData) {
+            return GoogleMap(
+              zoomControlsEnabled: false,
+              mapType: MapType.normal,
+              myLocationButtonEnabled: false,
+              onMapCreated: _onMapCreated,
+              myLocationEnabled: true,
+              initialCameraPosition: CameraPosition(
+                zoom: 18,
+                target:
+                    LatLng(driverLocation!.latitude, driverLocation!.longitude),
+              ),
+            );
+          } else {
+            return Container(
+              color: Colors.white,
+              child: Center(
+                  child: CircularProgressIndicator(
+                color: Colors.blue,
+              )),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  Widget buildProfile() {
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+            horizontal: width * 0.06, vertical: height * 0.02),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            GestureDetector(
+                onTap: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (BuildContext context) {
+                    return ProfileScreen();
+                  }));
+                },
+                child: FutureBuilder(
+                  future: get_user(),
+                  builder:
+                      (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
+                    return userList.isEmpty
+                        ? CircularProgressIndicator(
+                            color: Colors.white,
+                          )
+                        : userList[0]['user_image'] == ""
                             ? CircleAvatar(
-                                radius: 45,
-                                backgroundColor: Colors.white,
-                                child: CircleAvatar(
-                                  backgroundImage:
-                                      AssetImage('assets/images/profile.png'),
-                                  radius: 40,
-                                ),
+                                radius: width * 0.1,
+                                backgroundImage:
+                                    AssetImage("assets/images/profile.png"),
                               )
                             : CircleAvatar(
-                                radius: 45,
+                                radius: width * 0.11,
                                 backgroundColor: Colors.white,
                                 child: CircleAvatar(
+                                  radius: width * 0.1,
                                   backgroundImage: NetworkImage(
-                                      "$path_img/${snapshot.data[index]['user_image']}"),
-                                  radius: 40,
+                                      "$path_img/users/${userList[0]['user_image']}"),
                                 ),
                               );
-                      } else {
-                        return Shimmer.fromColors(
-                            baseColor: Colors.grey[400]!,
-                            highlightColor: Colors.grey[100]!,
-                            child: CircleAvatar(
-                              radius: 40,
-                              backgroundColor: Colors.black38,
-                            ));
-                      }
-                    },
-                  ),
-                  Transform.scale(
-                    scale: 1.5,
-                    child: Switch.adaptive(
-                        activeColor: Colors.green,
-                        inactiveTrackColor: Colors.red.shade500,
-                        inactiveThumbColor: Colors.red.shade300,
-                        value: value,
-                        onChanged: (value) {
-                          setState(() {
-                            this.value = value;
-                          });
-                          print(value);
-                        }),
-                  )
-                ],
+                  },
+                )),
+            Transform.scale(
+              scale: 1.3,
+              child: Switch.adaptive(
+                activeColor: Colors.green,
+                inactiveTrackColor: Colors.red.shade500,
+                inactiveThumbColor: Colors.red.shade300,
+                value: status_user,
+                onChanged: (value) {
+                  setState(() {
+                    this.status_user = value;
+                  });
+                  print(value);
+                },
               ),
-            ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildListOrder() {
+    double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
+    return Positioned(
+        bottom: 0,
+        child: FutureBuilder(
+          future: status_user == true ? get_request() : status_off(),
+          builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
+            return Container(
+              width: width,
+              height: height * 0.65,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF73AEF5),
+                    Color(0xFF61A4F1),
+                    Color(0xFF478De0),
+                    Color(0xFF398AE5)
+                  ],
+                ),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: ListView.builder(
+                padding: EdgeInsets.symmetric(vertical: height * 0.01),
+                itemCount: requestList.length,
+                itemBuilder: (BuildContext context, int index) {
+                  get_sum_amout_price(requestList[index]['order_id'], index);
+                  return Container(
+                    margin: EdgeInsets.symmetric(
+                        vertical: height * 0.005, horizontal: width * 0.02),
+                    width: width,
+                    height: height * 0.18,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 3,
+                          offset: Offset(3, 5),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          margin: EdgeInsets.all(8),
+                          width: width * 0.3,
+                          height: height * 0.16,
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              image: DecorationImage(
+                                  fit: BoxFit.cover,
+                                  image:
+                                      AssetImage("assets/images/store.jpg"))),
+                        ),
+                        Container(
+                          width: width * 0.6,
+                          height: height * 0.16,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              AutoText2(
+                                width: width * 0.7,
+                                text:
+                                    "Store name :  ${requestList[index]['store_name']}",
+                                fontSize: 15,
+                                color: Colors.black,
+                                text_align: TextAlign.left,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              AutoText(
+                                width: width * 0.6,
+                                text:
+                                    "Order :  ${requestList[index]['order_id']}",
+                                fontSize: 14,
+                                color: Colors.black,
+                                text_align: TextAlign.left,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              amountList.isEmpty
+                                  ? Text("")
+                                  : AutoText(
+                                      width: width * 0.6,
+                                      text: "Item : ${amountList[index]}",
+                                      fontSize: 14,
+                                      color: Colors.black,
+                                      text_align: TextAlign.left,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                              priceList.isEmpty
+                                  ? Text("")
+                                  : Row(
+                                      children: [
+                                        AutoText(
+                                          width: width * 0.12,
+                                          text: "Total : ",
+                                          fontSize: 14,
+                                          color: Colors.black,
+                                          text_align: TextAlign.left,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        AutoText(
+                                          width: width * 0.2,
+                                          text: "${priceList[index]}฿",
+                                          fontSize: 16,
+                                          color: Colors.green,
+                                          text_align: TextAlign.left,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ],
+                                    ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  buildButtonConfirm(requestList[index]
+                                          ['request_id']
+                                      .toString()),
+                                ],
+                              )
+                            ],
+                          ),
+                        )
+                      ],
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        ));
+  }
+
+  Widget buildButtonConfirm(String? request_id) {
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
+    return Container(
+      width: width * 0.22,
+      height: height * 0.035,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.black87,
+          backgroundColor: Colors.green,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(30)),
           ),
         ),
-        Positioned(
-          bottom: 0,
-          child: Container(
-            width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.height * 0.5,
-            decoration: BoxDecoration(
-              color: Color(0xff71B5F4),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(30),
-                topRight: Radius.circular(30),
-              ),
-            ),
-            child: ListView.builder(
-              itemCount: 10,
-              itemBuilder: (BuildContext context, int index) {
-                return Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-                  child: Container(
-                    width: MediaQuery.of(context).size.width * 0.95,
-                    height: MediaQuery.of(context).size.height * 0.15,
-                    decoration: BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 3,
-                            offset: Offset(3, 5),
-                          ),
-                        ],
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(30)),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 15),
-                            child: Row(
-                              children: [
-                                Text("ชื่อร้าน xxx xxxx xxx"),
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 15),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text("ระยะทาง x กิโลเมตร"),
-                                Text("ค่าส่ง 0.0 บาท")
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.25,
-                                  height:
-                                      MediaQuery.of(context).size.height * 0.05,
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      onPrimary: Colors.white,
-                                      primary: Colors.red,
-                                      shape: const RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(30)),
-                                      ),
-                                    ),
-                                    onPressed: () {},
-                                    child: Text('ยกเลิก'),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.25,
-                                  height:
-                                      MediaQuery.of(context).size.height * 0.05,
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      onPrimary: Colors.white,
-                                      primary: Colors.green,
-                                      shape: const RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(30)),
-                                      ),
-                                    ),
-                                    onPressed: () {
-                                      Navigator.push(context, MaterialPageRoute(
-                                          builder: (BuildContext context) {
-                                        return GoStoreScreen();
-                                      }));
-                                    },
-                                    child: Text('รับงาน'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+        onPressed: () {
+          setState(() {
+            statusLoading = true;
+          });
+          update_request(request_id);
+        },
+        child: Center(
+          child: AutoText(
+            color: Colors.white,
+            fontSize: 14,
+            text: 'Confirm',
+            text_align: TextAlign.center,
+            width: width * 0.29,
+            fontWeight: FontWeight.bold,
           ),
-        )
-      ],
-    ));
+        ),
+      ),
+    );
   }
 }
