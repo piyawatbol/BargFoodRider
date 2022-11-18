@@ -30,9 +30,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     bool emailValid =
         RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@gmail.com")
             .hasMatch(email.text);
-    if (emailValid == false) {
-      buildShowAlert("Please use Gmail");
-    } else if (first_name.text == "") {
+    if (first_name.text == "") {
       buildShowAlert("Please enter your Firstname");
     } else if (last_name.text == "") {
       buildShowAlert("Please enter your Lastname");
@@ -44,6 +42,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       buildShowAlert("Please enter your Phone");
     } else if (pass_word.text == "") {
       buildShowAlert("Please enter your Password");
+    } else if (emailValid == false) {
+      buildShowAlert("Please use Gmail");
     } else {
       setState(() {
         statusLoading = true;
@@ -377,7 +377,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         title: Center(
             child: Text(
           "$text",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         )),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(30)),

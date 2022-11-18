@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:barg_rider_app/screen/home_screen/go_store_screen.dart';
 import 'package:barg_rider_app/screen/profile_screen/profile_screen.dart';
 import 'package:barg_rider_app/widget/auto_size_text.dart';
 import 'package:barg_rider_app/widget/loadingPage.dart';
@@ -25,8 +26,10 @@ class _HomeScreenState extends State<HomeScreen> {
   List order_List = [];
   List amountList = [];
   List priceList = [];
+  List orderList = [];
   int sum_amount = 0;
   int sum_price = 0;
+  String? request_id;
   bool statusLoading = false;
   String? user_id;
 
@@ -135,6 +138,34 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         statusLoading = false;
       });
+      Navigator.pop(context);
+      Navigator.push(context,
+          MaterialPageRoute(builder: (BuildContext context) {
+        return GoStoreScreen(request_id: '$request_id');
+      }));
+    }
+  }
+
+  get_order(String? _request_id, String? _order_id, String? _time) async {
+    final response = await http.get(Uri.parse("$ipcon/get_order/$_order_id"));
+    var data = json.decode(response.body);
+
+    if (response.statusCode == 200) {
+      setState(() {
+        orderList = data;
+        request_id = _request_id;
+        sum_price = 0;
+      });
+      for (var i = 0; i < orderList.length; i++) {
+        if (orderList[i]['price'] != null) {
+          sum_price = sum_price + int.parse(orderList[i]['price']);
+        }
+      }
+      setState(() {
+        statusLoading = false;
+      });
+      // print(orderList);
+      buildShow(_order_id, _time);
     }
   }
 
@@ -164,7 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       color: Colors.white,
       width: width,
-      height: height * 0.45,
+      height: height * 0.5,
       child: FutureBuilder(
         future: _getLocation(),
         builder: (BuildContext context, AsyncSnapshot<Position?> snapshot) {
@@ -268,18 +299,9 @@ class _HomeScreenState extends State<HomeScreen> {
           builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
             return Container(
               width: width,
-              height: height * 0.65,
+              height: height * 0.6,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFF73AEF5),
-                    Color(0xFF61A4F1),
-                    Color(0xFF478De0),
-                    Color(0xFF398AE5)
-                  ],
-                ),
+                color: Color(0xffdedede),
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
@@ -290,104 +312,129 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemCount: requestList.length,
                 itemBuilder: (BuildContext context, int index) {
                   get_sum_amout_price(requestList[index]['order_id'], index);
-                  return Container(
-                    margin: EdgeInsets.symmetric(
-                        vertical: height * 0.005, horizontal: width * 0.02),
-                    width: width,
-                    height: height * 0.18,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 3,
-                          offset: Offset(3, 5),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          margin: EdgeInsets.all(8),
-                          width: width * 0.3,
-                          height: height * 0.16,
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              image: DecorationImage(
-                                  fit: BoxFit.cover,
-                                  image:
-                                      AssetImage("assets/images/store.jpg"))),
-                        ),
-                        Container(
-                          width: width * 0.6,
-                          height: height * 0.16,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              AutoText2(
-                                width: width * 0.7,
-                                text:
-                                    "Store name :  ${requestList[index]['store_name']}",
-                                fontSize: 15,
-                                color: Colors.black,
-                                text_align: TextAlign.left,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              AutoText(
-                                width: width * 0.6,
-                                text:
-                                    "Order :  ${requestList[index]['order_id']}",
-                                fontSize: 14,
-                                color: Colors.black,
-                                text_align: TextAlign.left,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              amountList.isEmpty
-                                  ? Text("")
-                                  : AutoText(
-                                      width: width * 0.6,
-                                      text: "Item : ${amountList[index]}",
-                                      fontSize: 14,
-                                      color: Colors.black,
-                                      text_align: TextAlign.left,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                              priceList.isEmpty
-                                  ? Text("")
-                                  : Row(
-                                      children: [
-                                        AutoText(
-                                          width: width * 0.12,
-                                          text: "Total : ",
-                                          fontSize: 14,
-                                          color: Colors.black,
-                                          text_align: TextAlign.left,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        AutoText(
-                                          width: width * 0.2,
-                                          text: "${priceList[index]}฿",
-                                          fontSize: 16,
-                                          color: Colors.green,
-                                          text_align: TextAlign.left,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ],
-                                    ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  buildButtonConfirm(requestList[index]
-                                          ['request_id']
-                                      .toString()),
-                                ],
-                              )
-                            ],
+                  return GestureDetector(
+                    onTap: () {
+                      statusLoading = true;
+                      get_order(
+                        requestList[index]['request_id'].toString(),
+                        requestList[index]['order_id'],
+                        requestList[index]['time'],
+                      );
+                    },
+                    child: Container(
+                      margin: EdgeInsets.symmetric(
+                          vertical: height * 0.005, horizontal: width * 0.02),
+                      width: width,
+                      height: height * 0.15,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 3,
+                            offset: Offset(3, 5),
                           ),
-                        )
-                      ],
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            margin: EdgeInsets.all(8),
+                            width: width * 0.3,
+                            height: height * 0.16,
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                image: DecorationImage(
+                                    fit: BoxFit.cover,
+                                    image:
+                                        AssetImage("assets/images/store.jpg"))),
+                          ),
+                          Container(
+                            width: width * 0.6,
+                            height: height * 0.12,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                AutoText2(
+                                  width: width * 0.7,
+                                  text:
+                                      "Store name :  ${requestList[index]['store_name']}",
+                                  fontSize: 15,
+                                  color: Colors.black,
+                                  text_align: TextAlign.left,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                AutoText(
+                                  width: width * 0.6,
+                                  text:
+                                      "Order :  ${requestList[index]['order_id']}",
+                                  fontSize: 14,
+                                  color: Colors.black,
+                                  text_align: TextAlign.left,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                amountList.isEmpty
+                                    ? Text("")
+                                    : AutoText(
+                                        width: width * 0.6,
+                                        text: "Item : ${amountList[index]}",
+                                        fontSize: 14,
+                                        color: Colors.black,
+                                        text_align: TextAlign.left,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                priceList.isEmpty
+                                    ? Text("")
+                                    : Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              AutoText(
+                                                width: width * 0.12,
+                                                text: "Total : ",
+                                                fontSize: 14,
+                                                color: Colors.black,
+                                                text_align: TextAlign.left,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              AutoText(
+                                                width: width * 0.2,
+                                                text: "${priceList[index]}฿",
+                                                fontSize: 16,
+                                                color: Colors.green,
+                                                text_align: TextAlign.left,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ],
+                                          ),
+                                          requestList[index]['slip_img'] == ''
+                                              ? AutoText(
+                                                  width: width * 0.2,
+                                                  text: "ปลายทาง",
+                                                  fontSize: 16,
+                                                  color: Colors.orange,
+                                                  text_align: TextAlign.left,
+                                                  fontWeight: FontWeight.w500,
+                                                )
+                                              : AutoText(
+                                                  width: width * 0.2,
+                                                  text: "OR Code",
+                                                  fontSize: 16,
+                                                  color: Colors.orange,
+                                                  text_align: TextAlign.left,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                        ],
+                                      ),
+                              ],
+                            ),
+                          )
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -395,6 +442,194 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
         ));
+  }
+
+  buildShow(order_id, time) {
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
+    return showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(30)),
+        ),
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.pop(context);
+                },
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                      vertical: height * 0.01, horizontal: width * 0.05),
+                  child: Image.asset(
+                    'assets/images/cancel.png',
+                    width: width * 0.1,
+                    color: Colors.grey,
+                  ),
+                ),
+              )
+            ],
+          ),
+          SizedBox(
+            width: width,
+            height: height * 0.3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                      vertical: height * 0.001, horizontal: width * 0.01),
+                  child: AutoText(
+                    color: Colors.black,
+                    fontSize: 16,
+                    text: 'Order Details',
+                    text_align: TextAlign.center,
+                    width: width * 0.29,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                      vertical: height * 0.005, horizontal: width * 0.03),
+                  child: AutoText(
+                    color: Colors.black,
+                    fontSize: 16,
+                    text: '$order_id',
+                    text_align: TextAlign.left,
+                    width: width * 0.29,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Container(
+                  margin: EdgeInsets.symmetric(vertical: height * 0.01),
+                  height: height * 0.17,
+                  child: ListView.builder(
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: orderList.length,
+                    shrinkWrap: true,
+                    itemBuilder: (BuildContext context, int index) {
+                      return Container(
+                        padding: EdgeInsets.symmetric(horizontal: width * 0.05),
+                        width: width * 0.1,
+                        height: height * 0.03,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            AutoText2(
+                              color: Colors.black,
+                              fontSize: 16,
+                              text: '${orderList[index]['food_name']}',
+                              text_align: TextAlign.left,
+                              width: width * 0.45,
+                              fontWeight: null,
+                            ),
+                            AutoText(
+                              color: Colors.black,
+                              fontSize: 16,
+                              text: '${orderList[index]['amount']}',
+                              text_align: TextAlign.right,
+                              width: width * 0.1,
+                              fontWeight: null,
+                            ),
+                            AutoText(
+                              color: Colors.black,
+                              fontSize: 16,
+                              text: '${orderList[index]['price']}',
+                              text_align: TextAlign.right,
+                              width: width * 0.1,
+                              fontWeight: null,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AutoText(
+                      color: Colors.black,
+                      fontSize: 16,
+                      text: 'Total',
+                      text_align: TextAlign.left,
+                      width: width * 0.29,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    AutoText(
+                      color: Colors.green,
+                      fontSize: 16,
+                      text: '${sum_price}฿',
+                      text_align: TextAlign.right,
+                      width: width * 0.29,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: width * 0.01),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Container(
+                  width: width * 0.35,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.green,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(30)),
+                      ),
+                    ),
+                    onPressed: () {
+                      update_request(request_id);
+                    },
+                    child: AutoText(
+                      color: Colors.white,
+                      fontSize: 14,
+                      text: 'Confirm',
+                      text_align: TextAlign.center,
+                      width: width * 0.29,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Container(
+                  width: width * 0.35,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.red,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(30)),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: AutoText(
+                      color: Colors.white,
+                      fontSize: 14,
+                      text: 'Cancel',
+                      text_align: TextAlign.center,
+                      width: width * 0.29,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget buildButtonConfirm(String? request_id) {

@@ -47,6 +47,11 @@ dependencies:
   google_maps_flutter: ^2.1.10
   geocoding: ^2.0.4
   image_picker_for_web: ^2.1.10
+  panara_dialogs: ^0.1.2
+  flutter_speed_dial: ^6.2.0
+  url_launcher: ^6.1.6
+  flutter_polyline_points: ^1.0.0
+
 
 dev_dependencies:
   flutter_test:
