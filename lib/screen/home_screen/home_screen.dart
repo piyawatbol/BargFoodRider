@@ -23,12 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool status_user = true;
   List userList = [];
   List requestList = [];
-  List order_List = [];
-  List amountList = [];
-  List priceList = [];
   List orderList = [];
-  int sum_amount = 0;
-  int sum_price = 0;
   String? request_id;
   bool statusLoading = false;
   String? user_id;
@@ -71,7 +66,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     final response = await http.get(Uri.parse("$ipcon/get_user/$user_id"));
     var data = json.decode(response.body);
-
     setState(() {
       userList = data;
     });
@@ -91,32 +85,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   status_off() {
     requestList.clear();
-  }
-
-  get_sum_amout_price(String? _order_id, index) async {
-    final response = await http.get(Uri.parse("$ipcon/get_order/$_order_id"));
-    var data = json.decode(response.body);
-    if (this.mounted) {
-      setState(() {
-        order_List = data;
-        sum_amount = 0;
-        sum_price = 0;
-      });
-    }
-    for (var i = 0; i < order_List.length; i++) {
-      int amount = int.parse(order_List[i]['amount']);
-      int price = int.parse(order_List[i]['price']);
-
-      sum_amount = sum_amount + amount;
-      sum_price = sum_price + price;
-    }
-    if (amountList.length < requestList.length) {
-      amountList.add('$sum_amount');
-      priceList.add('$sum_price');
-    } else {
-      amountList[index] = sum_amount.toString();
-      priceList[index] = sum_price.toString();
-    }
   }
 
   update_request(request_id) async {
@@ -146,7 +114,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  get_order(String? _request_id, String? _order_id, String? _time) async {
+  get_order(String? _request_id, String? _order_id, String? sum_price,
+      String? delivery_fee, String? total) async {
     final response = await http.get(Uri.parse("$ipcon/get_order/$_order_id"));
     var data = json.decode(response.body);
 
@@ -154,18 +123,11 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         orderList = data;
         request_id = _request_id;
-        sum_price = 0;
       });
-      for (var i = 0; i < orderList.length; i++) {
-        if (orderList[i]['price'] != null) {
-          sum_price = sum_price + int.parse(orderList[i]['price']);
-        }
-      }
       setState(() {
         statusLoading = false;
       });
-      // print(orderList);
-      buildShow(_order_id, _time);
+      buildShow(_order_id, sum_price, delivery_fee, total);
     }
   }
 
@@ -258,10 +220,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                     AssetImage("assets/images/profile.png"),
                               )
                             : CircleAvatar(
-                                radius: width * 0.11,
+                                radius: width * 0.115,
                                 backgroundColor: Colors.white,
                                 child: CircleAvatar(
                                   radius: width * 0.1,
+                                  backgroundColor: Colors.white,
                                   backgroundImage: NetworkImage(
                                       "$path_img/users/${userList[0]['user_image']}"),
                                 ),
@@ -301,7 +264,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: width,
               height: height * 0.6,
               decoration: BoxDecoration(
-                color: Color(0xffdedede),
+                color: Colors.grey.shade300,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
@@ -311,21 +274,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: EdgeInsets.symmetric(vertical: height * 0.01),
                 itemCount: requestList.length,
                 itemBuilder: (BuildContext context, int index) {
-                  get_sum_amout_price(requestList[index]['order_id'], index);
                   return GestureDetector(
                     onTap: () {
                       statusLoading = true;
                       get_order(
-                        requestList[index]['request_id'].toString(),
-                        requestList[index]['order_id'],
-                        requestList[index]['time'],
-                      );
+                          requestList[index]['request_id'].toString(),
+                          requestList[index]['order_id'],
+                          requestList[index]['sum_price'].toString(),
+                          requestList[index]['delivery_fee'].toString(),
+                          requestList[index]['total'].toString());
                     },
                     child: Container(
                       margin: EdgeInsets.symmetric(
                           vertical: height * 0.005, horizontal: width * 0.02),
                       width: width,
-                      height: height * 0.15,
+                      height: height * 0.13,
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(15),
@@ -352,10 +315,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           Container(
                             width: width * 0.6,
-                            height: height * 0.12,
+                            height: height * 0.1,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
                                 AutoText2(
                                   width: width * 0.7,
@@ -375,61 +338,50 @@ class _HomeScreenState extends State<HomeScreen> {
                                   text_align: TextAlign.left,
                                   fontWeight: FontWeight.w500,
                                 ),
-                                amountList.isEmpty
-                                    ? Text("")
-                                    : AutoText(
-                                        width: width * 0.6,
-                                        text: "Item : ${amountList[index]}",
-                                        fontSize: 14,
-                                        color: Colors.black,
-                                        text_align: TextAlign.left,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                priceList.isEmpty
-                                    ? Text("")
-                                    : Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              AutoText(
-                                                width: width * 0.12,
-                                                text: "Total : ",
-                                                fontSize: 14,
-                                                color: Colors.black,
-                                                text_align: TextAlign.left,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                              AutoText(
-                                                width: width * 0.2,
-                                                text: "${priceList[index]}฿",
-                                                fontSize: 16,
-                                                color: Colors.green,
-                                                text_align: TextAlign.left,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ],
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        AutoText(
+                                          width: width * 0.12,
+                                          text: "Total : ",
+                                          fontSize: 14,
+                                          color: Colors.black,
+                                          text_align: TextAlign.left,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        AutoText(
+                                          width: width * 0.2,
+                                          text:
+                                              "${requestList[index]['total']} ฿",
+                                          fontSize: 16,
+                                          color: Colors.green,
+                                          text_align: TextAlign.left,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ],
+                                    ),
+                                    requestList[index]['slip_img'] == ''
+                                        ? AutoText(
+                                            width: width * 0.2,
+                                            text: "ปลายทาง",
+                                            fontSize: 16,
+                                            color: Colors.orange,
+                                            text_align: TextAlign.left,
+                                            fontWeight: FontWeight.w500,
+                                          )
+                                        : AutoText(
+                                            width: width * 0.2,
+                                            text: "OR Code",
+                                            fontSize: 16,
+                                            color: Colors.orange,
+                                            text_align: TextAlign.left,
+                                            fontWeight: FontWeight.w500,
                                           ),
-                                          requestList[index]['slip_img'] == ''
-                                              ? AutoText(
-                                                  width: width * 0.2,
-                                                  text: "ปลายทาง",
-                                                  fontSize: 16,
-                                                  color: Colors.orange,
-                                                  text_align: TextAlign.left,
-                                                  fontWeight: FontWeight.w500,
-                                                )
-                                              : AutoText(
-                                                  width: width * 0.2,
-                                                  text: "OR Code",
-                                                  fontSize: 16,
-                                                  color: Colors.orange,
-                                                  text_align: TextAlign.left,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                        ],
-                                      ),
+                                  ],
+                                ),
                               ],
                             ),
                           )
@@ -444,7 +396,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ));
   }
 
-  buildShow(order_id, time) {
+  buildShow(order_id, sum_price, delivery_fee, total) {
     double height = MediaQuery.of(context).size.height;
     double width = MediaQuery.of(context).size.width;
     return showDialog(
@@ -475,100 +427,170 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           SizedBox(
             width: width,
-            height: height * 0.3,
+            height: orderList.length <= 2
+                ? height * 0.2
+                : orderList.length < 8
+                    ? height * 0.5
+                    : height * 0.8,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                      vertical: height * 0.001, horizontal: width * 0.01),
-                  child: AutoText(
-                    color: Colors.black,
-                    fontSize: 16,
-                    text: 'Order Details',
-                    text_align: TextAlign.center,
-                    width: width * 0.29,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                      vertical: height * 0.005, horizontal: width * 0.03),
-                  child: AutoText(
-                    color: Colors.black,
-                    fontSize: 16,
-                    text: '$order_id',
-                    text_align: TextAlign.left,
-                    width: width * 0.29,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Container(
-                  margin: EdgeInsets.symmetric(vertical: height * 0.01),
-                  height: height * 0.17,
-                  child: ListView.builder(
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: orderList.length,
-                    shrinkWrap: true,
-                    itemBuilder: (BuildContext context, int index) {
-                      return Container(
-                        padding: EdgeInsets.symmetric(horizontal: width * 0.05),
-                        width: width * 0.1,
-                        height: height * 0.03,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            AutoText2(
-                              color: Colors.black,
-                              fontSize: 16,
-                              text: '${orderList[index]['food_name']}',
-                              text_align: TextAlign.left,
-                              width: width * 0.45,
-                              fontWeight: null,
-                            ),
-                            AutoText(
-                              color: Colors.black,
-                              fontSize: 16,
-                              text: '${orderList[index]['amount']}',
-                              text_align: TextAlign.right,
-                              width: width * 0.1,
-                              fontWeight: null,
-                            ),
-                            AutoText(
-                              color: Colors.black,
-                              fontSize: 16,
-                              text: '${orderList[index]['price']}',
-                              text_align: TextAlign.right,
-                              width: width * 0.1,
-                              fontWeight: null,
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    AutoText(
-                      color: Colors.black,
-                      fontSize: 16,
-                      text: 'Total',
-                      text_align: TextAlign.left,
-                      width: width * 0.29,
-                      fontWeight: FontWeight.bold,
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                          vertical: height * 0.001, horizontal: width * 0.02),
+                      child: AutoText(
+                        color: Colors.black,
+                        fontSize: 16,
+                        text: 'Order Details',
+                        text_align: TextAlign.center,
+                        width: width * 0.29,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    AutoText(
-                      color: Colors.green,
-                      fontSize: 16,
-                      text: '${sum_price}฿',
-                      text_align: TextAlign.right,
-                      width: width * 0.29,
-                      fontWeight: FontWeight.w500,
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                          vertical: height * 0.005, horizontal: width * 0.03),
+                      child: AutoText(
+                        color: Colors.black,
+                        fontSize: 16,
+                        text: '$order_id',
+                        text_align: TextAlign.left,
+                        width: width * 0.29,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Container(
+                      margin: EdgeInsets.symmetric(vertical: height * 0.01),
+                      child: ListView.builder(
+                        itemCount: orderList.length,
+                        shrinkWrap: true,
+                        itemBuilder: (BuildContext context, int index) {
+                          return Padding(
+                            padding:
+                                EdgeInsets.symmetric(horizontal: width * 0.05),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  children: [
+                                    AutoText2(
+                                      color: Colors.black,
+                                      fontSize: 16,
+                                      text: '${orderList[index]['food_name']}',
+                                      text_align: TextAlign.left,
+                                      width: width * 0.45,
+                                      fontWeight: null,
+                                    ),
+                                    AutoText2(
+                                      color: Colors.grey,
+                                      fontSize: 16,
+                                      text: '${orderList[index]['detail']}',
+                                      text_align: TextAlign.left,
+                                      width: width * 0.45,
+                                      fontWeight: null,
+                                    ),
+                                  ],
+                                ),
+                                AutoText(
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                  text: '${orderList[index]['amount']}',
+                                  text_align: TextAlign.right,
+                                  width: width * 0.1,
+                                  fontWeight: null,
+                                ),
+                                AutoText(
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                  text: '${orderList[index]['price']}',
+                                  text_align: TextAlign.right,
+                                  width: width * 0.1,
+                                  fontWeight: null,
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ],
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: width * 0.04),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                AutoText(
+                  color: Colors.black,
+                  fontSize: 14,
+                  text: 'subtotal',
+                  text_align: TextAlign.left,
+                  width: width * 0.29,
+                  fontWeight: FontWeight.w500,
+                ),
+                AutoText(
+                  color: Colors.black,
+                  fontSize: 14,
+                  text: '$sum_price ฿',
+                  text_align: TextAlign.right,
+                  width: width * 0.29,
+                  fontWeight: FontWeight.w500,
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: width * 0.04),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                AutoText(
+                  color: Colors.black,
+                  fontSize: 14,
+                  text: 'delivery fee',
+                  text_align: TextAlign.left,
+                  width: width * 0.29,
+                  fontWeight: FontWeight.w500,
+                ),
+                AutoText(
+                  color: Colors.black,
+                  fontSize: 14,
+                  text: '$delivery_fee ฿',
+                  text_align: TextAlign.right,
+                  width: width * 0.29,
+                  fontWeight: FontWeight.w500,
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: width * 0.04),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                AutoText(
+                  color: Colors.black,
+                  fontSize: 16,
+                  text: 'Total',
+                  text_align: TextAlign.left,
+                  width: width * 0.29,
+                  fontWeight: FontWeight.bold,
+                ),
+                AutoText(
+                  color: Colors.green,
+                  fontSize: 16,
+                  text: '$total ฿',
+                  text_align: TextAlign.right,
+                  width: width * 0.29,
+                  fontWeight: FontWeight.w500,
                 ),
               ],
             ),

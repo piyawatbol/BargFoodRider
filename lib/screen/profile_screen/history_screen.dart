@@ -8,14 +8,14 @@ import 'package:barg_rider_app/widget/back_button.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ReceivedOrderScreen extends StatefulWidget {
-  ReceivedOrderScreen({Key? key}) : super(key: key);
+class HistoryScreen extends StatefulWidget {
+  HistoryScreen({Key? key}) : super(key: key);
 
   @override
-  State<ReceivedOrderScreen> createState() => _ReceivedOrderScreenState();
+  State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _ReceivedOrderScreenState extends State<ReceivedOrderScreen> {
+class _HistoryScreenState extends State<HistoryScreen> {
   List requestList = [];
   bool status_user = true;
   List userList = [];
@@ -95,7 +95,7 @@ class _ReceivedOrderScreenState extends State<ReceivedOrderScreen> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                BackArrowButton(text: 'Received Order', width2: 0.4),
+                BackArrowButton(text: 'History Order', width2: 0.4),
                 buildListOrder()
               ],
             ),
@@ -136,13 +136,13 @@ class _ReceivedOrderScreenState extends State<ReceivedOrderScreen> {
                       }));
                     }
                   },
-                  child: requestList[index]['status'] != '7'
+                  child: requestList[index]['status'] == '7'
                       ? Container(
                           margin: EdgeInsets.symmetric(
                               vertical: height * 0.005,
                               horizontal: width * 0.02),
                           width: width,
-                          height: height * 0.14 ,
+                          height: height * 0.17,
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(15),
@@ -159,7 +159,7 @@ class _ReceivedOrderScreenState extends State<ReceivedOrderScreen> {
                               Container(
                                 margin: EdgeInsets.all(8),
                                 width: width * 0.3,
-                                height: height * 0.14, 
+                                height: height * 0.16,
                                 decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10),
                                     image: DecorationImage(
@@ -169,116 +169,123 @@ class _ReceivedOrderScreenState extends State<ReceivedOrderScreen> {
                               ),
                               Container(
                                 width: width * 0.6,
-                                height: height * 0.12,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        AutoText(
-                                          width: width * 0.14,
-                                          text: "Status : ",
-                                          fontSize: 14,
-                                          color: Colors.black,
-                                          text_align: TextAlign.left,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        AutoText(
-                                          width: width * 0.3,
-                                          text:
-                                              "${requestList[index]['order_status_name']}",
-                                          fontSize: 14,
-                                          color: requestList[index]['status'] ==
-                                                  '4'
-                                              ? Colors.orange
-                                              : Colors.blue,
-                                          text_align: TextAlign.left,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ],
-                                    ),
-                                    AutoText2(
-                                      width: width * 0.7,
-                                      text:
-                                          "Store name :  ${requestList[index]['store_name']}",
-                                      fontSize: 15,
-                                      color: Colors.black,
-                                      text_align: TextAlign.left,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    AutoText(
-                                      width: width * 0.6,
-                                      text:
-                                          "Order :  ${requestList[index]['order_id']}",
-                                      fontSize: 14,
-                                      color: Colors.black,
-                                      text_align: TextAlign.left,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    amountList.isEmpty
-                                        ? Text("")
-                                        : AutoText(
-                                            width: width * 0.6,
-                                            text: "Item : ${amountList[index]}",
+                                height: height * 0.13,
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          AutoText(
+                                            width: width * 0.14,
+                                            text: "Status : ",
                                             fontSize: 14,
                                             color: Colors.black,
                                             text_align: TextAlign.left,
                                             fontWeight: FontWeight.w500,
                                           ),
-                                    priceList.isEmpty
-                                        ? Text("")
-                                        : Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  AutoText(
-                                                    width: width * 0.12,
-                                                    text: "Total : ",
-                                                    fontSize: 14,
-                                                    color: Colors.black,
-                                                    text_align: TextAlign.left,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                  AutoText(
-                                                    width: width * 0.2,
-                                                    text:
-                                                        "${priceList[index]}฿",
-                                                    fontSize: 16,
-                                                    color: Colors.green,
-                                                    text_align: TextAlign.left,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                ],
-                                              ),
-                                              requestList[index]['slip_img'] ==
-                                                      ''
-                                                  ? AutoText(
-                                                      width: width * 0.2,
-                                                      text: "ปลายทาง",
-                                                      fontSize: 16,
-                                                      color: Colors.orange,
-                                                      text_align:
-                                                          TextAlign.left,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    )
-                                                  : AutoText(
-                                                      width: width * 0.2,
-                                                      text: "OR Code",
-                                                      fontSize: 16,
-                                                      color: Colors.orange,
+                                          AutoText(
+                                            width: width * 0.3,
+                                            text:
+                                                "${requestList[index]['order_status_name']}",
+                                            fontSize: 14,
+                                            color: Colors.green,
+                                            text_align: TextAlign.left,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ],
+                                      ),
+                                      AutoText2(
+                                        width: width * 0.7,
+                                        text:
+                                            "Store name :  ${requestList[index]['store_name']}",
+                                        fontSize: 15,
+                                        color: Colors.black,
+                                        text_align: TextAlign.left,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      AutoText(
+                                        width: width * 0.6,
+                                        text:
+                                            "Order :  ${requestList[index]['order_id']}",
+                                        fontSize: 14,
+                                        color: Colors.black,
+                                        text_align: TextAlign.left,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      amountList.isEmpty
+                                          ? Text("")
+                                          : AutoText(
+                                              width: width * 0.6,
+                                              text:
+                                                  "Item : ${amountList[index]}",
+                                              fontSize: 14,
+                                              color: Colors.black,
+                                              text_align: TextAlign.left,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                      priceList.isEmpty
+                                          ? Text("")
+                                          : Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    AutoText(
+                                                      width: width * 0.12,
+                                                      text: "Total : ",
+                                                      fontSize: 14,
+                                                      color: Colors.black,
                                                       text_align:
                                                           TextAlign.left,
                                                       fontWeight:
                                                           FontWeight.w500,
                                                     ),
-                                            ],
-                                          ),
-                                  ],
+                                                    AutoText(
+                                                      width: width * 0.2,
+                                                      text:
+                                                          "${priceList[index]}฿",
+                                                      fontSize: 16,
+                                                      color: Colors.green,
+                                                      text_align:
+                                                          TextAlign.left,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ],
+                                                ),
+                                                requestList[index]
+                                                            ['slip_img'] ==
+                                                        ''
+                                                    ? AutoText(
+                                                        width: width * 0.2,
+                                                        text: "ปลายทาง",
+                                                        fontSize: 16,
+                                                        color: Colors.orange,
+                                                        text_align:
+                                                            TextAlign.left,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      )
+                                                    : AutoText(
+                                                        width: width * 0.2,
+                                                        text: "OR Code",
+                                                        fontSize: 16,
+                                                        color: Colors.orange,
+                                                        text_align:
+                                                            TextAlign.left,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                              ],
+                                            ),
+                                    ],
+                                  ),
                                 ),
                               )
                             ],

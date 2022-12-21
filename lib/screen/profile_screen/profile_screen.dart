@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:barg_rider_app/ipcon.dart';
 import 'package:barg_rider_app/screen/login_system/login_screen.dart';
 import 'package:barg_rider_app/screen/profile_screen/edit_proflile_screen.dart';
+import 'package:barg_rider_app/screen/profile_screen/history_screen.dart';
 import 'package:barg_rider_app/screen/profile_screen/received_order_screen.dart';
 import 'package:barg_rider_app/screen/profile_screen/report_screen.dart';
 import 'package:barg_rider_app/screen/profile_screen/show_big_img.dart';
@@ -76,6 +77,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 buildButtonEdit(),
                 SizedBox(height: height * 0.05),
                 buildReceived_order(),
+                buildHistory_order(),
                 buildButtonReport(),
                 buildButtonLogout(),
               ],
@@ -244,6 +246,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: Color(0xFF527DAA),
                     fontSize: 16,
                     text: 'Received Order',
+                    text_align: TextAlign.center,
+                    width: width * 0.45,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    color: Color(0xFF527DAA),
+                  )
+                ],
+              ),
+            ),
+          );
+  }
+
+  Widget buildHistory_order() {
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
+    return userList.isEmpty
+        ? buildButtonLogout()
+        : Container(
+            margin: EdgeInsets.symmetric(vertical: height * 0.01),
+            width: width * 0.8,
+            height: height * 0.08,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.black87,
+                backgroundColor: Colors.white,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(30)),
+                ),
+              ),
+              onPressed: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (BuildContext context) {
+                  return HistoryScreen();
+                }));
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  AutoText(
+                    color: Color(0xFF527DAA),
+                    fontSize: 16,
+                    text: 'History Order',
                     text_align: TextAlign.center,
                     width: width * 0.45,
                     fontWeight: FontWeight.bold,
