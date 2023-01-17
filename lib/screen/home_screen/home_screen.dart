@@ -363,23 +363,23 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ],
                                     ),
-                                    requestList[index]['slip_img'] == ''
-                                        ? AutoText(
-                                            width: width * 0.2,
-                                            text: "ปลายทาง",
-                                            fontSize: 16,
-                                            color: Colors.orange,
-                                            text_align: TextAlign.left,
-                                            fontWeight: FontWeight.w500,
-                                          )
-                                        : AutoText(
-                                            width: width * 0.2,
-                                            text: "OR Code",
-                                            fontSize: 16,
-                                            color: Colors.orange,
-                                            text_align: TextAlign.left,
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        AutoText(
+                                          width: width * 0.5,
+                                          text:
+                                              "payment : ${requestList[index]['buyer_name']}",
+                                          fontSize: 14,
+                                          color: Colors.black,
+                                          text_align: TextAlign.left,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ],
+                                    ),
                                   ],
                                 ),
                               ],

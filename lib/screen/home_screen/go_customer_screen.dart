@@ -510,6 +510,7 @@ class _GotoCustomerState extends State<GotoCustomer> {
             ],
           ),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
                 padding: EdgeInsets.symmetric(
@@ -555,13 +556,9 @@ class _GotoCustomerState extends State<GotoCustomer> {
                       fontWeight: FontWeight.bold,
                     ),
                     AutoText(
-                      color: requestList[0]['slip_img'] == ''
-                          ? Colors.orange
-                          : Colors.green,
+                      color: Colors.black,
                       fontSize: 16,
-                      text: requestList[0]['slip_img'] == ''
-                          ? 'ชำระปลายทาง'
-                          : 'QR CODE',
+                      text: '${requestList[0]['buyer_name']}',
                       text_align: TextAlign.right,
                       width: width * 0.29,
                       fontWeight: FontWeight.w500,

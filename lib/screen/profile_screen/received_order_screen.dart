@@ -20,8 +20,6 @@ class _ReceivedOrderScreenState extends State<ReceivedOrderScreen> {
   bool status_user = true;
   List userList = [];
   List order_List = [];
-  List amountList = [];
-  List priceList = [];
   List orderList = [];
   int sum_amount = 0;
   int sum_price = 0;
@@ -41,32 +39,6 @@ class _ReceivedOrderScreenState extends State<ReceivedOrderScreen> {
       setState(() {
         requestList = data;
       });
-    }
-  }
-
-  get_sum_amout_price(String? _order_id, index) async {
-    final response = await http.get(Uri.parse("$ipcon/get_order/$_order_id"));
-    var data = json.decode(response.body);
-    if (this.mounted) {
-      setState(() {
-        order_List = data;
-        sum_amount = 0;
-        sum_price = 0;
-      });
-    }
-    for (var i = 0; i < order_List.length; i++) {
-      int amount = int.parse(order_List[i]['amount']);
-      int price = int.parse(order_List[i]['price']);
-
-      sum_amount = sum_amount + amount;
-      sum_price = sum_price + price;
-    }
-    if (amountList.length < requestList.length) {
-      amountList.add('$sum_amount');
-      priceList.add('$sum_price');
-    } else {
-      amountList[index] = sum_amount.toString();
-      priceList[index] = sum_price.toString();
     }
   }
 
@@ -118,16 +90,15 @@ class _ReceivedOrderScreenState extends State<ReceivedOrderScreen> {
             padding: EdgeInsets.symmetric(vertical: height * 0.01),
             itemCount: requestList.length,
             itemBuilder: (BuildContext context, int index) {
-              get_sum_amout_price(requestList[index]['order_id'], index);
               return GestureDetector(
                   onTap: () {
-                    if (requestList[index]['status'] == '4') {
+                    if (requestList[index]['order_status_id'] == 4) {
                       Navigator.push(context,
                           MaterialPageRoute(builder: (BuildContext context) {
                         return GoStoreScreen(
                             request_id: '${requestList[index]['request_id']}');
                       }));
-                    } else if (requestList[index]['status'] == '6') {
+                    } else if (requestList[index]['order_status_id'] == 6) {
                       Navigator.push(context,
                           MaterialPageRoute(builder: (BuildContext context) {
                         return GotoCustomer(
@@ -136,13 +107,13 @@ class _ReceivedOrderScreenState extends State<ReceivedOrderScreen> {
                       }));
                     }
                   },
-                  child: requestList[index]['status'] != '7'
+                  child: requestList[index]['order_status_id'] != 7
                       ? Container(
                           margin: EdgeInsets.symmetric(
                               vertical: height * 0.005,
                               horizontal: width * 0.02),
                           width: width,
-                          height: height * 0.14 ,
+                          height: height * 0.17,
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(15),
@@ -159,7 +130,7 @@ class _ReceivedOrderScreenState extends State<ReceivedOrderScreen> {
                               Container(
                                 margin: EdgeInsets.all(8),
                                 width: width * 0.3,
-                                height: height * 0.14, 
+                                height: height * 0.18,
                                 decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10),
                                     image: DecorationImage(
@@ -169,7 +140,7 @@ class _ReceivedOrderScreenState extends State<ReceivedOrderScreen> {
                               ),
                               Container(
                                 width: width * 0.6,
-                                height: height * 0.12,
+                                height: height * 0.14,
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisAlignment:
@@ -217,67 +188,52 @@ class _ReceivedOrderScreenState extends State<ReceivedOrderScreen> {
                                       text_align: TextAlign.left,
                                       fontWeight: FontWeight.w500,
                                     ),
-                                    amountList.isEmpty
-                                        ? Text("")
-                                        : AutoText(
-                                            width: width * 0.6,
-                                            text: "Item : ${amountList[index]}",
-                                            fontSize: 14,
-                                            color: Colors.black,
-                                            text_align: TextAlign.left,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                    priceList.isEmpty
-                                        ? Text("")
-                                        : Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  AutoText(
-                                                    width: width * 0.12,
-                                                    text: "Total : ",
-                                                    fontSize: 14,
-                                                    color: Colors.black,
-                                                    text_align: TextAlign.left,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                  AutoText(
-                                                    width: width * 0.2,
-                                                    text:
-                                                        "${priceList[index]}฿",
-                                                    fontSize: 16,
-                                                    color: Colors.green,
-                                                    text_align: TextAlign.left,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                ],
-                                              ),
-                                              requestList[index]['slip_img'] ==
-                                                      ''
-                                                  ? AutoText(
-                                                      width: width * 0.2,
-                                                      text: "ปลายทาง",
-                                                      fontSize: 16,
-                                                      color: Colors.orange,
-                                                      text_align:
-                                                          TextAlign.left,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    )
-                                                  : AutoText(
-                                                      width: width * 0.2,
-                                                      text: "OR Code",
-                                                      fontSize: 16,
-                                                      color: Colors.orange,
-                                                      text_align:
-                                                          TextAlign.left,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                            ],
-                                          ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            AutoText(
+                                              width: width * 0.12,
+                                              text: "Total : ",
+                                              fontSize: 14,
+                                              color: Colors.black,
+                                              text_align: TextAlign.left,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            AutoText(
+                                              width: width * 0.2,
+                                              text:
+                                                  "${requestList[index]['total']}฿",
+                                              fontSize: 16,
+                                              color: Colors.green,
+                                              text_align: TextAlign.left,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            AutoText(
+                                              width: width * 0.5,
+                                              text:
+                                                  "payment : ${requestList[index]['buyer_name']}",
+                                              fontSize: 14,
+                                              color: Colors.black,
+                                              text_align: TextAlign.left,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ],
                                 ),
                               )

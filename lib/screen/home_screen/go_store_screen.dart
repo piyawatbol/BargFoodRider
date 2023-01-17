@@ -81,7 +81,7 @@ class _GoStoreScreenState extends State<GoStoreScreen> {
         store_long = double.parse(requestList[0]['store_long']);
       });
     }
-    if (requestList[0]['status'] == '6') {
+    if (requestList[0]['order_status_id'] == 6) {
       Navigator.pushReplacement(context,
           MaterialPageRoute(builder: (BuildContext context) {
         return GotoCustomer(request_id: '${widget.request_id}');
@@ -423,6 +423,7 @@ class _GoStoreScreenState extends State<GoStoreScreen> {
             ],
           ),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
                 padding: EdgeInsets.symmetric(
@@ -468,13 +469,9 @@ class _GoStoreScreenState extends State<GoStoreScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                     AutoText(
-                      color: requestList[0]['slip_img'] == ''
-                          ? Colors.orange
-                          : Colors.green,
+                      color: Colors.black,
                       fontSize: 16,
-                      text: requestList[0]['slip_img'] == ''
-                          ? 'ชำระปลายทาง'
-                          : 'QR CODE',
+                      text: "${requestList[0]['buyer_name']}",
                       text_align: TextAlign.right,
                       width: width * 0.29,
                       fontWeight: FontWeight.w500,
