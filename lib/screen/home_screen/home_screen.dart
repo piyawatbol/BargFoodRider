@@ -3,6 +3,7 @@ import 'package:barg_rider_app/screen/home_screen/go_store_screen.dart';
 import 'package:barg_rider_app/screen/profile_screen/profile_screen.dart';
 import 'package:barg_rider_app/widget/auto_size_text.dart';
 import 'package:barg_rider_app/widget/loadingPage.dart';
+import 'package:barg_rider_app/widget/toast_custom.dart';
 import 'package:http/http.dart' as http;
 import 'package:barg_rider_app/ipcon.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? request_id;
   bool statusLoading = false;
   String? user_id;
+  List walletList = [];
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
@@ -115,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   get_order(String? _request_id, String? _order_id, String? sum_price,
-      String? delivery_fee, String? total) async {
+      String? delivery_fee, String? total, buyer_id) async {
     final response = await http.get(Uri.parse("$ipcon/get_order/$_order_id"));
     var data = json.decode(response.body);
 
@@ -127,8 +129,52 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         statusLoading = false;
       });
-      buildShow(_order_id, sum_price, delivery_fee, total);
+      buildShow(_order_id, sum_price, delivery_fee, total, buyer_id);
     }
+  }
+
+  get_wallet() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    setState(() {
+      user_id = preferences.getString('user_id');
+    });
+    final response = await http.get(Uri.parse("$ipcon/get_wallet/$user_id"));
+    var data = json.decode(response.body);
+    setState(() {
+      walletList = data;
+    });
+  }
+
+  pay_wallet(total) async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    setState(() {
+      user_id = preferences.getString('user_id');
+    });
+    final response = await http.patch(
+      Uri.parse('$ipcon/pay_wallet/$user_id'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        "wallet_id": walletList[0]['wallet_id'].toString(),
+        "wallet_amount": total.toString(),
+        "wallet_total": walletList[0]['wallet_total'].toString(),
+      }),
+    );
+    var data = json.decode(response.body);
+    print(data);
+    if (response.statusCode == 200) {
+      if (data == "pay wallet Success") {
+      } else if (data == "The amount in the wallet is insufficient") {
+        Toast_Custom(data, Colors.red);
+      }
+    }
+  }
+
+  @override
+  void initState() {
+    get_wallet();
+    super.initState();
   }
 
   @override
@@ -203,7 +249,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.push(context,
                       MaterialPageRoute(builder: (BuildContext context) {
                     return ProfileScreen();
-                  }));
+                  })).then((value) => get_wallet());
                 },
                 child: FutureBuilder(
                   future: get_user(),
@@ -274,121 +320,128 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: EdgeInsets.symmetric(vertical: height * 0.01),
                 itemCount: requestList.length,
                 itemBuilder: (BuildContext context, int index) {
-                  return GestureDetector(
-                    onTap: () {
-                      statusLoading = true;
-                      get_order(
-                          requestList[index]['request_id'].toString(),
-                          requestList[index]['order_id'],
-                          requestList[index]['sum_price'].toString(),
-                          requestList[index]['delivery_fee'].toString(),
-                          requestList[index]['total'].toString());
-                    },
-                    child: Container(
-                      margin: EdgeInsets.symmetric(
-                          vertical: height * 0.005, horizontal: width * 0.02),
-                      width: width,
-                      height: height * 0.13,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(15),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 3,
-                            offset: Offset(3, 5),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            margin: EdgeInsets.all(8),
-                            width: width * 0.3,
-                            height: height * 0.16,
+                  return int.parse(walletList[0]['wallet_total'].toString()) <
+                          int.parse(requestList[index]['total'].toString())
+                      ? SizedBox()
+                      : GestureDetector(
+                          onTap: () {
+                            statusLoading = true;
+                            get_order(
+                                requestList[index]['request_id'].toString(),
+                                requestList[index]['order_id'],
+                                requestList[index]['sum_price'].toString(),
+                                requestList[index]['delivery_fee'].toString(),
+                                requestList[index]['total'].toString(),
+                                requestList[index]['buyer_id']);
+                          },
+                          child: Container(
+                            margin: EdgeInsets.symmetric(
+                                vertical: height * 0.005,
+                                horizontal: width * 0.02),
+                            width: width,
+                            height: height * 0.13,
                             decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                image: DecorationImage(
-                                    fit: BoxFit.cover,
-                                    image:
-                                        AssetImage("assets/images/store.jpg"))),
-                          ),
-                          Container(
-                            width: width * 0.6,
-                            height: height * 0.1,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                AutoText2(
-                                  width: width * 0.7,
-                                  text:
-                                      "Store name :  ${requestList[index]['store_name']}",
-                                  fontSize: 15,
-                                  color: Colors.black,
-                                  text_align: TextAlign.left,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                AutoText(
-                                  width: width * 0.6,
-                                  text:
-                                      "Order :  ${requestList[index]['order_id']}",
-                                  fontSize: 14,
-                                  color: Colors.black,
-                                  text_align: TextAlign.left,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        AutoText(
-                                          width: width * 0.12,
-                                          text: "Total : ",
-                                          fontSize: 14,
-                                          color: Colors.black,
-                                          text_align: TextAlign.left,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        AutoText(
-                                          width: width * 0.2,
-                                          text:
-                                              "${requestList[index]['total']} ฿",
-                                          fontSize: 16,
-                                          color: Colors.green,
-                                          text_align: TextAlign.left,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        AutoText(
-                                          width: width * 0.5,
-                                          text:
-                                              "payment : ${requestList[index]['buyer_name']}",
-                                          fontSize: 14,
-                                          color: Colors.black,
-                                          text_align: TextAlign.left,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(15),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 3,
+                                  offset: Offset(3, 5),
                                 ),
                               ],
                             ),
-                          )
-                        ],
-                      ),
-                    ),
-                  );
+                            child: Row(
+                              children: [
+                                Container(
+                                  margin: EdgeInsets.all(8),
+                                  width: width * 0.3,
+                                  height: height * 0.16,
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      image: DecorationImage(
+                                          fit: BoxFit.cover,
+                                          image: AssetImage(
+                                              "assets/images/store.jpg"))),
+                                ),
+                                Container(
+                                  width: width * 0.6,
+                                  height: height * 0.1,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      AutoText2(
+                                        width: width * 0.7,
+                                        text:
+                                            "Store name :  ${requestList[index]['store_name']}",
+                                        fontSize: 15,
+                                        color: Colors.black,
+                                        text_align: TextAlign.left,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      AutoText(
+                                        width: width * 0.6,
+                                        text:
+                                            "Order :  ${requestList[index]['order_id']}",
+                                        fontSize: 14,
+                                        color: Colors.black,
+                                        text_align: TextAlign.left,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              AutoText(
+                                                width: width * 0.12,
+                                                text: "Total : ",
+                                                fontSize: 14,
+                                                color: Colors.black,
+                                                text_align: TextAlign.left,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              AutoText(
+                                                width: width * 0.2,
+                                                text:
+                                                    "${requestList[index]['total']} ฿",
+                                                fontSize: 16,
+                                                color: Colors.green,
+                                                text_align: TextAlign.left,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      Row(
+                                        children: [
+                                          Row(
+                                            children: [
+                                              AutoText(
+                                                width: width * 0.5,
+                                                text:
+                                                    "payment : ${requestList[index]['buyer_name']}",
+                                                fontSize: 14,
+                                                color: Colors.black,
+                                                text_align: TextAlign.left,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        );
                 },
               ),
             );
@@ -396,7 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ));
   }
 
-  buildShow(order_id, sum_price, delivery_fee, total) {
+  buildShow(order_id, sum_price, delivery_fee, total, buyer_id) {
     double height = MediaQuery.of(context).size.height;
     double width = MediaQuery.of(context).size.width;
     return showDialog(
@@ -611,7 +664,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     onPressed: () {
-                      update_request(request_id);
+                      if (buyer_id == 1) {
+                        update_request(request_id);
+                      } else {
+                        update_request(request_id);
+                        pay_wallet(total);
+                      }
                     },
                     child: AutoText(
                       color: Colors.white,
@@ -650,40 +708,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget buildButtonConfirm(String? request_id) {
-    double height = MediaQuery.of(context).size.height;
-    double width = MediaQuery.of(context).size.width;
-    return Container(
-      width: width * 0.22,
-      height: height * 0.035,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.black87,
-          backgroundColor: Colors.green,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(30)),
-          ),
-        ),
-        onPressed: () {
-          setState(() {
-            statusLoading = true;
-          });
-          update_request(request_id);
-        },
-        child: Center(
-          child: AutoText(
-            color: Colors.white,
-            fontSize: 14,
-            text: 'Confirm',
-            text_align: TextAlign.center,
-            width: width * 0.29,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
       ),
     );
   }

@@ -7,6 +7,7 @@ import 'package:barg_rider_app/screen/profile_screen/history_screen.dart';
 import 'package:barg_rider_app/screen/profile_screen/received_order_screen.dart';
 import 'package:barg_rider_app/screen/profile_screen/report_screen.dart';
 import 'package:barg_rider_app/screen/profile_screen/show_big_img.dart';
+import 'package:barg_rider_app/screen/profile_screen/wallet/wallet_screen.dart';
 import 'package:barg_rider_app/widget/auto_size_text.dart';
 import 'package:barg_rider_app/widget/back_button.dart';
 import 'package:http/http.dart' as http;
@@ -76,6 +77,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 buildName(),
                 buildButtonEdit(),
                 SizedBox(height: height * 0.05),
+                buildWallet(),
                 buildReceived_order(),
                 buildHistory_order(),
                 buildButtonReport(),
@@ -211,6 +213,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   width: width * 0.29,
                   fontWeight: FontWeight.bold,
                 ),
+              ),
+            ),
+          );
+  }
+
+  Widget buildWallet() {
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
+    return userList.isEmpty
+        ? buildButtonLogout()
+        : Container(
+            margin: EdgeInsets.symmetric(vertical: height * 0.01),
+            width: width * 0.8,
+            height: height * 0.08,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.black87,
+                backgroundColor: Colors.white,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(30)),
+                ),
+              ),
+              onPressed: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (BuildContext context) {
+                  return WalletScreen();
+                }));
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  AutoText(
+                    color: Color(0xFF527DAA),
+                    fontSize: 16,
+                    text: 'Wallet',
+                    text_align: TextAlign.center,
+                    width: width * 0.26,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    color: Color(0xFF527DAA),
+                  )
+                ],
               ),
             ),
           );
