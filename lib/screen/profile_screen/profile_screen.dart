@@ -80,7 +80,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 buildWallet(),
                 buildReceived_order(),
                 buildHistory_order(),
-                buildButtonReport(),
+                // buildButtonReport(),
                 buildButtonLogout(),
               ],
             ),
