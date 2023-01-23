@@ -668,7 +668,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         update_request(request_id);
                       } else {
                         update_request(request_id);
-                        pay_wallet(total);
+                        pay_wallet(sum_price);
                       }
                     },
                     child: AutoText(

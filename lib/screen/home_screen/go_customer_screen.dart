@@ -305,7 +305,15 @@ class _GotoCustomerState extends State<GotoCustomer> {
         "status": "7",
       }),
     );
+    if (response.statusCode == 200) {
+      pay_order_success();
+    }
+  }
 
+  pay_order_success() async {
+    final response = await http
+        .post(Uri.parse("$ipcon/pay_order_success/${widget.request_id}"));
+    // var data = json.decode(response.body);
     if (response.statusCode == 200) {
       setState(() {
         statusLoading = false;
